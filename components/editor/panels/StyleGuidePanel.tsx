@@ -1,0 +1,99 @@
+"use client";
+
+import { useMemo } from "react";
+import { useProject } from "@/lib/store";
+import { buildScale, toUnit } from "@/lib/scale";
+import { fontById } from "@/lib/fonts";
+import { evaluateContrast, formatRatio } from "@/lib/contrast";
+
+// "Style Guide" in the sidebar: the presentable, client-facing summary of the
+// whole system — fonts, scale ramp, colors, contrast verdict. This is the
+// screen the Edit/View toggle is really for.
+export function StyleGuidePanel() {
+  const p = useProject();
+  const scale = useMemo(() => buildScale(p.base, p.ratio), [p.base, p.ratio]);
+  const heading = fontById(p.headingFont);
+  const body = fontById(p.bodyFont);
+  const contrast = evaluateContrast(p.foreground, p.background);
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-4 overflow-y-auto ts-scroll">
+      {/* header */}
+      <section className="rounded-card border border-line bg-white p-6 shadow-panel">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Style Guide</p>
+        <h2 className="mt-1 text-2xl font-bold text-ink" style={{ fontFamily: heading.stack }}>
+          {p.projectName}
+        </h2>
+        <p className="mt-1 text-sm text-muted">by {p.author}</p>
+      </section>
+
+      {/* typography */}
+      <section className="rounded-card border border-line bg-white p-6 shadow-panel">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Typography</p>
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          <div className="rounded-md border border-line p-4">
+            <p className="text-[10px] text-muted">Heading</p>
+            <p className="mt-1 text-xl font-semibold text-ink" style={{ fontFamily: heading.stack }}>
+              {heading.name}
+            </p>
+          </div>
+          <div className="rounded-md border border-line p-4">
+            <p className="text-[10px] text-muted">Body</p>
+            <p className="mt-1 text-xl text-ink" style={{ fontFamily: body.stack }}>
+              {body.name}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-2 border-t border-line pt-4">
+          {[...scale].reverse().map((s) => (
+            <div key={s.step} className="flex items-baseline gap-4">
+              <span className="w-24 shrink-0 text-right font-mono text-[11px] text-muted">
+                {s.label} · {toUnit(s.px, p.unit)}
+              </span>
+              <span
+                className="truncate text-ink"
+                style={{ fontFamily: heading.stack, fontSize: Math.min(s.px, 44) }}
+              >
+                {p.previewText || "Modern Typography"}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-[11px] text-muted">
+          Base {p.base}px · ratio {p.ratio}
+        </p>
+      </section>
+
+      {/* color */}
+      <section className="rounded-card border border-line bg-white p-6 shadow-panel">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Color</p>
+        <div className="mt-3 grid grid-cols-3 gap-4">
+          {(
+            [
+              ["Foreground", p.foreground],
+              ["Background", p.background],
+              ["Accent", p.accent],
+            ] as const
+          ).map(([label, hex]) => (
+            <div key={label} className="overflow-hidden rounded-md border border-line">
+              <div className="h-14" style={{ background: hex }} />
+              <div className="p-2.5">
+                <p className="text-[11px] font-medium text-ink">{label}</p>
+                <p className="font-mono text-[11px] text-muted">{hex}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {contrast && (
+          <p className="mt-3 text-[12px] text-muted">
+            Foreground on background:{" "}
+            <b className={contrast.grade === "Fail" ? "text-fail" : "text-pass"}>
+              {formatRatio(contrast.ratio)} · {contrast.grade === "Fail" ? "Fails AA" : `${contrast.grade} pass`}
+            </b>
+          </p>
+        )}
+      </section>
+    </div>
+  );
+}
