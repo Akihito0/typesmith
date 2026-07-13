@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { buildScale, RATIO_PRESETS } from "@/lib/scale";
 import { fontById } from "@/lib/fonts";
 import { evaluateContrast, formatRatio } from "@/lib/contrast";
-import { useInView } from "./useReveal";
+import { useCountUp, useInView } from "./useReveal";
+
+// Helper for the staggered reveal delay custom property.
+const delay = (i: number) => ({ "--i": i } as CSSProperties);
 
 // ============================================================================
 // 02 — MARQUEE STRIP. Full-bleed dark strip between the specimen and the
@@ -311,16 +314,22 @@ function InstrumentRow({
     >
       <div className="grid grid-cols-1 items-start gap-8 md:grid-cols-[1fr_420px]">
         <div>
-          <span className="font-mono text-[10px] tracking-[0.15em] text-brand-600">{index}</span>
+          <span className="reveal-item font-mono text-[10px] tracking-[0.15em] text-brand-600" style={delay(0)}>
+            {index}
+          </span>
           <h3
-            className="mt-2 font-display font-medium text-ink"
-            style={{ fontSize: "clamp(2.25rem, 3.5vw, 3.25rem)" }}
+            className="reveal-item mt-2 font-display font-medium text-ink"
+            style={{ fontSize: "clamp(2.25rem, 3.5vw, 3.25rem)", ...delay(1) }}
           >
             {title}
           </h3>
-          <p className="mt-3 max-w-sm text-[13px] leading-relaxed text-muted">{body}</p>
+          <p className="reveal-item mt-3 max-w-sm text-[13px] leading-relaxed text-muted" style={delay(2)}>
+            {body}
+          </p>
         </div>
-        <div className="chamfer-panel border border-line bg-surface p-6">{demo}</div>
+        <div className="reveal-item chamfer-panel border border-line bg-surface p-6" style={delay(3)}>
+          {demo}
+        </div>
       </div>
     </div>
   );
@@ -369,7 +378,7 @@ export function Instruments() {
   return (
     <section id="instruments" className="mx-auto max-w-6xl px-6 md:px-10">
       <h2 className="flex flex-wrap items-center gap-3 border-t border-line py-6 font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
-        <span className="text-brand-600">02</span>
+        <span className="text-brand-600">03</span>
         Instruments
         <span className="h-px flex-1 bg-line" />
         <span className="text-brand-600">Interactive &mdash; try them</span>
@@ -384,9 +393,52 @@ export function Instruments() {
 }
 
 // ============================================================================
-// 04 — EDITIONS. Two-column spec table, not pricing cards. Keeps both plans'
+// 04 — DOCTRINE. A scroll-revealed editorial statement between the working
+// instruments and the editions table: three masked display lines that slide
+// up as the block enters the viewport (fail-open — visible without JS), plus
+// a footnote that ties the claim back to the page itself.
+// ============================================================================
+export function Doctrine() {
+  const { ref, revealClass } = useInView<HTMLDivElement>(0.35);
+  return (
+    <section id="doctrine" className="mx-auto max-w-6xl px-6 md:px-10">
+      <h2 className="flex items-center gap-3 border-t border-line py-6 font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
+        <span className="text-brand-600">04</span>
+        Doctrine
+        <span className="h-px flex-1 bg-line" />
+      </h2>
+
+      <div ref={ref} className={`reveal-lines py-[14vh] ${revealClass}`}>
+        <p
+          className="font-display font-medium tracking-tight text-ink"
+          style={{ fontSize: "clamp(2.2rem, 6.5vw, 5.5rem)", lineHeight: 1.04 }}
+        >
+          <span className="mask-line">
+            <span style={delay(0)}>Good type is not</span>
+          </span>
+          <span className="mask-line">
+            <span style={delay(1)}>chosen &mdash; it is</span>
+          </span>
+          <span className="mask-line">
+            <span className="text-brand-600" style={delay(2)}>
+              derived.
+            </span>
+          </span>
+        </p>
+        <p className="reveal-item mt-10 max-w-md text-[13px] leading-relaxed text-muted" style={delay(3)}>
+          Every size on this page is 16px &times; 1.25<sup>n</sup>. One base,
+          one ratio, no eyeballing &mdash; that is the whole doctrine.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================================
+// 05 — EDITIONS. Two-column spec table, not pricing cards. Keeps both plans'
 // behaviors: Community -> onStart opens AuthModal; Professional -> /editor.
 // CTAs restyled to the chamfer language; no more thin-bordered rectangles.
+// The whole table reveals on scroll, columns staggered.
 // ============================================================================
 const COMMUNITY_FEATURES = [
   "Core scale generator",
@@ -402,17 +454,18 @@ const PRO_FEATURES = [
 ];
 
 export function Editions({ onStart }: { onStart: () => void }) {
+  const { ref, revealClass } = useInView<HTMLDivElement>();
   return (
     <section id="editions" className="mx-auto max-w-6xl px-6 md:px-10">
       <h2 className="flex items-center gap-3 border-t border-line py-6 font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
-        <span className="text-brand-600">03</span>
+        <span className="text-brand-600">05</span>
         Editions
         <span className="h-px flex-1 bg-line" />
       </h2>
 
-      <div className="grid grid-cols-1 border-t border-line md:grid-cols-2">
+      <div ref={ref} className={`reveal-row grid grid-cols-1 border-t border-line md:grid-cols-2 ${revealClass}`}>
         {/* Community */}
-        <div className="border-b border-line py-10 md:border-b-0 md:border-r md:border-line md:pr-10">
+        <div className="reveal-item border-b border-line py-10 md:border-b-0 md:border-r md:border-line md:pr-10" style={delay(0)}>
           <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
             Community
           </p>
@@ -433,7 +486,7 @@ export function Editions({ onStart }: { onStart: () => void }) {
         </div>
 
         {/* Professional */}
-        <div className="py-10 md:pl-10">
+        <div className="reveal-item py-10 md:pl-10" style={delay(1)}>
           {/* Tag on its own line so it never clips at narrow widths */}
           <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-brand-600">
             Recommended -&gt;
@@ -465,17 +518,64 @@ export function Editions({ onStart }: { onStart: () => void }) {
 }
 
 // ============================================================================
-// 05 — COLOPHON (footer, id="docs"). Dark again — symmetric with the hero.
-// A designed section: sign-off line, hairline, mono columns, and a watermark
-// word cropped flush to the very bottom edge of the page.
+// 06 — COLOPHON (footer, id="docs"). Dark again — symmetric with the hero.
+// A designed section: masked sign-off line, a count-up stat row (the HUD
+// float-count signature), hairline, mono columns, and a watermark word
+// cropped flush to the very bottom edge of the page.
 // ============================================================================
+const COLOPHON_STATS = [
+  { label: "Ratio presets", value: 8 },
+  { label: "Preview faces", value: 9 },
+  { label: "Instruments", value: 4 },
+  { label: "Signups required", value: 0 },
+];
+
+// Count-up cell, fail-open: SSR / no-observer renders the final value; only
+// after the parent block is armed does it hold at 0 and count up on entry.
+function StatCell({
+  label,
+  value,
+  counting,
+  armed,
+}: {
+  label: string;
+  value: number;
+  counting: boolean;
+  armed: boolean;
+}) {
+  const counted = useCountUp(value, counting);
+  const shown = armed ? counted : value;
+  return (
+    <div>
+      <p className="font-display text-5xl font-medium tabular-nums text-white">
+        {String(shown).padStart(2, "0")}
+      </p>
+      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.15em] text-gray-500">{label}</p>
+    </div>
+  );
+}
+
 export function Colophon() {
+  const { ref, revealClass } = useInView<HTMLDivElement>(0.3);
+  const armed = revealClass.includes("is-armed");
+  const counting = revealClass.includes("is-in");
+
   return (
     <footer id="docs" className="grid-blueprint-faint relative mt-6 overflow-hidden border-t border-canvas-line bg-canvas text-white">
       <div className="relative mx-auto max-w-6xl px-6 pt-16 md:px-10">
-        <h2 className="font-display text-4xl font-medium text-white md:text-5xl">
-          Tuned, not guessed.
-        </h2>
+        <div ref={ref} className={`reveal-lines ${revealClass}`}>
+          <h2 className="font-display text-4xl font-medium text-white md:text-5xl">
+            <span className="mask-line">
+              <span style={delay(0)}>Tuned, not guessed.</span>
+            </span>
+          </h2>
+
+          <div className="mt-12 grid grid-cols-2 gap-8 md:grid-cols-4">
+            {COLOPHON_STATS.map((s) => (
+              <StatCell key={s.label} {...s} counting={counting} armed={armed} />
+            ))}
+          </div>
+        </div>
 
         <div className="mt-10 h-px w-full bg-canvas-line" />
 

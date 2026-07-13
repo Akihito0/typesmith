@@ -176,6 +176,44 @@ input[type="range"].ts-range::-moz-range-thumb {
     repeating-linear-gradient(to bottom, rgba(43, 43, 43, 0.55) 0, rgba(43, 43, 43, 0.55) 1px, transparent 1px, transparent 48px);
 }
 
+/* ==========================================================================
+   v5 — scroll-revealed composition. Two staggered patterns, both FAIL-OPEN
+   (the base state hides nothing; only `.is-armed`, added after an observer
+   attaches, hides — and `.is-in` animates back with per-child delays via
+   the --i custom property).
+
+   .reveal-lines > .mask-line > span : masked display lines sliding up
+   .reveal-item                      : fade + rise for smaller blocks
+   Hiding is intentionally transition-free (instant), so arming never
+   flashes; only the reveal animates. prefers-reduced-motion collapses it.
+   ========================================================================== */
+.reveal-lines .mask-line {
+  display: block;
+  overflow: hidden;
+}
+.reveal-lines .mask-line > span {
+  display: block;
+}
+.reveal-lines.is-armed .mask-line > span {
+  transform: translateY(112%);
+}
+.reveal-lines.is-armed.is-in .mask-line > span {
+  transform: translateY(0);
+  transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--i, 0) * 120ms);
+}
+
+.is-armed .reveal-item {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.is-armed.is-in .reveal-item {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+
 /* Quick masked swap for the Pairing instrument — a brief fade + rise each
    time the sample pair cycles. */
 @keyframes swap-in {
