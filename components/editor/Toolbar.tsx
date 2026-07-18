@@ -6,7 +6,7 @@ import { useProject } from "@/lib/store";
 import { FONTS } from "@/lib/fonts";
 import { PRESETS, presetByName, randomPreset } from "@/lib/presets";
 import { buildShareUrl } from "@/lib/share";
-import { Button, Logo, Segmented, Select, Shuffle } from "@/components/ui";
+import { Button, Logo, Redo, Segmented, Select, Shuffle, Undo } from "@/components/ui";
 
 // Top toolbar from the screenshots: Edit|View toggle, TypeSmith logo, preset
 // dropdown + shuffle, HEADING/BODY font pickers, SIZE + RATIO fields, then
@@ -55,6 +55,30 @@ export function Toolbar({ onExport }: { onExport: () => void }) {
       <Link href="/" className="ml-1">
         <Logo className="text-sm" />
       </Link>
+
+      <div className="mx-2 h-6 w-px bg-line" />
+
+      {/* Undo / redo */}
+      <div className="flex items-center gap-0.5">
+        <button
+          onClick={project.undo}
+          disabled={project.past.length === 0}
+          title="Undo (⌘Z)"
+          aria-label="Undo"
+          className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-surface hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+        >
+          <Undo />
+        </button>
+        <button
+          onClick={project.redo}
+          disabled={project.future.length === 0}
+          title="Redo (⇧⌘Z)"
+          aria-label="Redo"
+          className="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-surface hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+        >
+          <Redo />
+        </button>
+      </div>
 
       <div className="mx-2 h-6 w-px bg-line" />
 

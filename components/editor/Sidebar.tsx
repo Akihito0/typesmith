@@ -1,7 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useProject } from "@/lib/store";
 import { Button } from "@/components/ui";
 import type { ToolId } from "./types";
+
+const DOCS_URL = "https://github.com/Akihito0/typesmith#readme";
 
 // Left rail from the screenshots: Project Workspace header, DESIGN SYSTEM
 // group (Style Guide / Type Scale / Colors), LAYOUTS group (Website / Mobile
@@ -27,6 +31,17 @@ export function Sidebar({
   active: ToolId;
   onSelect: (t: ToolId) => void;
 }) {
+  const router = useRouter();
+  const reset = useProject((s) => s.reset);
+
+  const newAsset = () => {
+    if (!window.confirm("Start a new project? Current settings will be replaced (undo is available).")) return;
+    reset();
+    onSelect("type-scale");
+    // Drop any ?s= share param so the fresh state isn't re-hydrated over.
+    router.replace("/editor");
+  };
+
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-line bg-sidebar">
       {/* workspace header */}
@@ -66,9 +81,11 @@ export function Sidebar({
       </nav>
 
       <div className="border-t border-line p-3">
-        <Button variant="dark" className="w-full h-8 text-xs">+ New Asset</Button>
+        <Button variant="dark" className="w-full h-8 text-xs" onClick={newAsset}>+ New Asset</Button>
         <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-muted">
-          <span>Docs</span>
+          <a href={DOCS_URL} target="_blank" rel="noreferrer" className="hover:text-ink hover:underline">
+            Docs
+          </a>
           <span className="inline-flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-pass" /> Status: Operational
           </span>

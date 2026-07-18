@@ -1,5 +1,7 @@
 # local assistant tooling (not published)
 /.claude/
+CLAUDE.md
+TASK.md
 
 # project
 next-env.d.ts

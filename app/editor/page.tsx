@@ -22,13 +22,36 @@ function EditorInner() {
 
   // Shareable links: if a ?s= param is present, decode the full project state
   // into the store once on mount. Opening someone's link recreates their
-  // project exactly — no account, no database.
+  // project exactly — no account, no database. Otherwise restore the autosaved
+  // session from localStorage (persist rehydration is manual so the share link
+  // always wins).
   useEffect(() => {
     const s = params.get("s");
-    if (!s) return;
-    const decoded = decodeState(s);
+    const decoded = s ? decodeState(s) : null;
     if (decoded) hydrate(decoded);
+    else useProject.persist.rehydrate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Undo/redo shortcuts. Skipped while typing in a field so the browser's own
+  // text undo keeps working there.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      const key = e.key.toLowerCase();
+      if (key === "z") {
+        e.preventDefault();
+        if (e.shiftKey) useProject.getState().redo();
+        else useProject.getState().undo();
+      } else if (key === "y") {
+        e.preventDefault();
+        useProject.getState().redo();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   const showMockupRail = tool === "website" || tool === "mobile";
