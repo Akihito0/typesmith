@@ -27,10 +27,24 @@ export function TypeScalePanel() {
   const css = useMemo(
     () => generate(p, "css"),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.projectName, p.author, p.unit]
+    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking]
   );
 
   const isView = p.mode === "view";
+
+  // Rail sliders are real controls: dragging a row solves for the setting that
+  // puts that row at the dragged size — the Body row adjusts the base, every
+  // other row adjusts the ratio (px = base · ratio^step).
+  const onRailDrag = (step: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const targetPx = Math.max(6, Number(e.target.value));
+    if (step === 0) {
+      p.set("base", Math.round(Math.min(28, Math.max(10, targetPx))));
+    } else {
+      const ratio = Math.pow(targetPx / p.base, 1 / step);
+      if (!Number.isFinite(ratio)) return;
+      p.set("ratio", Math.round(Math.min(2, Math.max(1.02, ratio)) * 1000) / 1000);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl border border-canvas-line bg-canvas text-white">
@@ -92,15 +106,17 @@ export function TypeScalePanel() {
                   </span>
                   <span className="text-[10px] text-gray-500">{row.label}</span>
                 </div>
-                {/* slider maps this row's px against the scale's max for a visual weight bar */}
                 <input
                   type="range"
                   className="ts-range mt-1.5 w-full"
-                  min={0}
+                  min={6}
                   max={100}
-                  value={Math.min(100, (row.px / scale[scale.length - 1].px) * 100)}
-                  readOnly
-                  aria-label={`${row.label} size ${Math.round(row.px)}px`}
+                  step={0.5}
+                  value={Math.min(100, row.px)}
+                  onChange={isView ? undefined : onRailDrag(row.step)}
+                  disabled={isView}
+                  title={row.step === 0 ? "Drag to adjust the base size" : "Drag to adjust the ratio"}
+                  aria-label={`${row.label} size ${Math.round(row.px)}px — drag to adjust ${row.step === 0 ? "base size" : "ratio"}`}
                 />
               </div>
             ))}
@@ -132,19 +148,21 @@ export function TypeScalePanel() {
           )}
 
           <h2
-            className="mt-8 leading-[1.05] tracking-tight"
+            className="mt-8"
             style={{
               fontFamily: heading.stack,
               fontSize: Math.min(scale[scale.length - 2].px, 84),
               fontWeight: 700,
+              lineHeight: p.headingLeading,
+              letterSpacing: `${p.headingTracking}em`,
             }}
           >
             {p.previewText || "Modern Typography"}
           </h2>
 
           <p
-            className="mt-6 max-w-md leading-relaxed text-gray-400"
-            style={{ fontFamily: body.stack, fontSize: p.base }}
+            className="mt-6 max-w-md text-gray-400"
+            style={{ fontFamily: body.stack, fontSize: p.base, lineHeight: p.bodyLeading }}
           >
             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
             tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
@@ -156,12 +174,14 @@ export function TypeScalePanel() {
           <div className="mt-10 space-y-3 border-t border-canvas-line pt-6">
             {[...scale].reverse().map((row) => (
               <div key={row.step} className="flex items-baseline gap-4">
-                <span className="w-16 shrink-0 text-right font-mono text-[11px] text-gray-500">
-                  {toUnit(row.px, p.unit)}
-                </span>
+                <CopySize value={toUnit(row.px, p.unit)} />
                 <span
                   className="truncate text-gray-200"
-                  style={{ fontFamily: heading.stack, fontSize: Math.min(row.px, 56) }}
+                  style={{
+                    fontFamily: heading.stack,
+                    fontSize: Math.min(row.px, 56),
+                    letterSpacing: `${p.headingTracking}em`,
+                  }}
                 >
                   {p.previewText || "Modern Typography"}
                 </span>
@@ -189,6 +209,51 @@ export function TypeScalePanel() {
                 <option value="px">px</option>
                 <option value="em">em</option>
               </select>
+            </div>
+
+            <div>
+              <span className="text-[10px] text-gray-500">Leading &amp; Tracking</span>
+              <div className="mt-1 grid grid-cols-3 gap-2">
+                <label className="block">
+                  <span className="text-[9px] text-gray-500">Heading LH</span>
+                  <input
+                    type="number"
+                    step={0.05}
+                    min={0.8}
+                    max={2}
+                    value={p.headingLeading}
+                    onChange={(e) => p.set("headingLeading", Number(e.target.value) || 1.1)}
+                    className="mt-0.5 h-8 w-full rounded border border-canvas-line bg-canvas-panel px-1.5 text-xs text-white"
+                    aria-label="Heading line-height"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[9px] text-gray-500">Body LH</span>
+                  <input
+                    type="number"
+                    step={0.05}
+                    min={1}
+                    max={2.4}
+                    value={p.bodyLeading}
+                    onChange={(e) => p.set("bodyLeading", Number(e.target.value) || 1.6)}
+                    className="mt-0.5 h-8 w-full rounded border border-canvas-line bg-canvas-panel px-1.5 text-xs text-white"
+                    aria-label="Body line-height"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[9px] text-gray-500">Track (em)</span>
+                  <input
+                    type="number"
+                    step={0.005}
+                    min={-0.1}
+                    max={0.2}
+                    value={p.headingTracking}
+                    onChange={(e) => p.set("headingTracking", Number(e.target.value) || 0)}
+                    className="mt-0.5 h-8 w-full rounded border border-canvas-line bg-canvas-panel px-1.5 text-xs text-white"
+                    aria-label="Heading letter-spacing in em"
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -243,5 +308,32 @@ export function TypeScalePanel() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Click a size in the ramp to copy it in the current output unit.
+function CopySize({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      return;
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
+
+  return (
+    <button
+      onClick={copy}
+      title={`Copy ${value}`}
+      className={`w-16 shrink-0 text-right font-mono text-[11px] ${
+        copied ? "text-pass" : "text-gray-500 hover:text-white"
+      }`}
+    >
+      {copied ? "Copied" : value}
+    </button>
   );
 }

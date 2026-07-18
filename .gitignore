@@ -3,6 +3,12 @@
 CLAUDE.md
 TASK.md
 
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # project
 next-env.d.ts
 .DS_Store

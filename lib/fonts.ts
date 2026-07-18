@@ -1,3 +1,5 @@
+import { gfFallback } from "./googleFonts";
+
 // The preview fonts a user can pick for heading/body. All are loaded once from
 // Google Fonts in the root layout, so switching is just a font-family swap.
 // "Geist" refers to the app's own bundled Geist family (via next `geist` pkg),
@@ -25,8 +27,31 @@ export const FONTS: FontDef[] = [
   { id: "jetbrains-mono", name: "JetBrains Mono", stack: "'JetBrains Mono', ui-monospace, monospace", category: "mono" },
 ];
 
+// Session-only fonts registered at runtime via the FontFace API (see
+// lib/customFonts.ts). A binary font can't travel in the share URL or
+// localStorage, so an unknown id gracefully falls back to the default face.
+const CUSTOM: FontDef[] = [];
+
+export function registerCustomFont(def: FontDef) {
+  const i = CUSTOM.findIndex((f) => f.id === def.id);
+  if (i >= 0) CUSTOM[i] = def;
+  else CUSTOM.push(def);
+}
+
 export function fontById(id: string): FontDef {
-  return FONTS.find((f) => f.id === id) ?? FONTS[0];
+  // Google Fonts ids ("gf:Family+Name") resolve from the id itself, so share
+  // links and saved sessions work on any device — the stylesheet is injected
+  // on demand by ensureGoogleFont (lib/googleFonts.ts).
+  if (id.startsWith("gf:")) {
+    const family = id.slice(3).replace(/\+/g, " ");
+    return {
+      id,
+      name: family,
+      stack: `'${family}', ${gfFallback(family)}`,
+      category: "sans",
+    };
+  }
+  return FONTS.find((f) => f.id === id) ?? CUSTOM.find((f) => f.id === id) ?? FONTS[0];
 }
 
 // Google Fonts stylesheet URL covering every non-Geist face above.

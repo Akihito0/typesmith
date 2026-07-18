@@ -58,3 +58,47 @@ export function toUnit(px: number, unit: Unit, base = 16): string {
 function round(n: number): number {
   return Math.round(n * 1000) / 1000;
 }
+
+// --- Fluid (clamp) scale -----------------------------------------------------
+// Interpolates each step between two viewports: at FLUID_MIN_VW the scale is
+// rebuilt from a compressed base (phones need a tighter ramp), at FLUID_MAX_VW
+// it matches the regular scale. Output is a CSS clamp() in rem + vw.
+
+export const FLUID_MIN_VW = 360;
+export const FLUID_MAX_VW = 1280;
+
+export interface FluidStep {
+  step: number;
+  label: string;
+  minPx: number;
+  maxPx: number;
+  clamp: string;
+}
+
+export function buildFluidScale(base: number, ratio: number): FluidStep[] {
+  const minBase = Math.max(12, Math.round(base * 0.875));
+  const min = buildScale(minBase, ratio);
+  const max = buildScale(base, ratio);
+  return max.map((s, i) => ({
+    step: s.step,
+    label: s.label,
+    minPx: min[i].px,
+    maxPx: s.px,
+    clamp: clampExpr(min[i].px, s.px),
+  }));
+}
+
+export function clampExpr(
+  minPx: number,
+  maxPx: number,
+  minVw = FLUID_MIN_VW,
+  maxVw = FLUID_MAX_VW
+): string {
+  if (maxPx <= minPx) return `${round(minPx / 16)}rem`;
+  const slope = (maxPx - minPx) / (maxVw - minVw);
+  const interceptRem = round((minPx - slope * minVw) / 16);
+  const sign = interceptRem < 0 ? "-" : "+";
+  return `clamp(${round(minPx / 16)}rem, ${round(slope * 100)}vw ${sign} ${round(
+    Math.abs(interceptRem)
+  )}rem, ${round(maxPx / 16)}rem)`;
+}

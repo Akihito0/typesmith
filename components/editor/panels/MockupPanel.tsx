@@ -100,12 +100,20 @@ export function WebsiteMockup() {
 
             {/* hero */}
             <div className="px-8 pb-14 pt-10 text-center">
+              <p
+                className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em]"
+                style={{ fontFamily: body.stack, color: p.accent }}
+              >
+                {p.subhead}
+              </p>
               <h1
-                className="mx-auto max-w-xl leading-[1.08] tracking-tight"
+                className="mx-auto max-w-xl"
                 style={{
                   fontFamily: heading.stack,
                   fontSize: Math.min(px("H1", 48), width === "mobile" ? 34 : 56),
                   fontWeight: 700,
+                  lineHeight: p.headingLeading,
+                  letterSpacing: `${p.headingTracking}em`,
                 }}
               >
                 {words.map((w, i) => (
@@ -115,8 +123,8 @@ export function WebsiteMockup() {
                 ))}
               </h1>
               <p
-                className="mx-auto mt-5 max-w-md leading-relaxed opacity-70"
-                style={{ fontFamily: body.stack, fontSize: p.base }}
+                className="mx-auto mt-5 max-w-md opacity-70"
+                style={{ fontFamily: body.stack, fontSize: p.base, lineHeight: p.bodyLeading }}
               >
                 {p.body}
               </p>
@@ -183,12 +191,17 @@ export function MobileMockup() {
           {/* hero card */}
           <div className="px-5 pb-4">
             <h2
-              className="leading-tight tracking-tight"
-              style={{ fontFamily: heading.stack, fontSize: Math.min(px("H2", 30), 30), fontWeight: 700 }}
+              style={{
+                fontFamily: heading.stack,
+                fontSize: Math.min(px("H2", 30), 30),
+                fontWeight: 700,
+                lineHeight: p.headingLeading,
+                letterSpacing: `${p.headingTracking}em`,
+              }}
             >
               {p.previewText || "Modern Typography"}
             </h2>
-            <p className="mt-2 text-[12px] leading-relaxed opacity-70" style={{ fontFamily: body.stack }}>
+            <p className="mt-2 text-[12px] opacity-70" style={{ fontFamily: body.stack, lineHeight: p.bodyLeading }}>
               {p.body}
             </p>
             <span
@@ -242,7 +255,7 @@ export function MockupControls() {
   const code = useMemo(
     () => generate(p, format, minify),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.projectName, p.author, format, minify]
+    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, format, minify]
   );
 
   return (
@@ -310,12 +323,45 @@ export function MockupControls() {
           />
         </label>
       </div>
+
+      {/* The copy rendered inside the mockups (and the contrast preview) */}
+      <div className="border-t border-line pt-3">
+        <span className="text-[10px] text-muted">Mockup Content</span>
+        <label className="mt-1 block">
+          <span className="text-[10px] text-muted">Headline</span>
+          <input
+            value={p.headline}
+            onChange={(e) => p.set("headline", e.target.value)}
+            className="mt-0.5 h-8 w-full rounded-md border border-line px-2 text-sm"
+            aria-label="Mockup headline"
+          />
+        </label>
+        <label className="mt-2 block">
+          <span className="text-[10px] text-muted">Subhead</span>
+          <input
+            value={p.subhead}
+            onChange={(e) => p.set("subhead", e.target.value)}
+            className="mt-0.5 h-8 w-full rounded-md border border-line px-2 text-sm"
+            aria-label="Mockup subhead"
+          />
+        </label>
+        <label className="mt-2 block">
+          <span className="text-[10px] text-muted">Body Copy</span>
+          <textarea
+            value={p.body}
+            onChange={(e) => p.set("body", e.target.value)}
+            rows={4}
+            className="mt-0.5 w-full resize-none rounded-md border border-line px-2 py-1.5 text-sm leading-snug"
+            aria-label="Mockup body copy"
+          />
+        </label>
+      </div>
     </aside>
   );
 }
 
 // ---- helpers ---------------------------------------------------------------
-function readableInk(bgHex: string): string {
+export function readableInk(bgHex: string): string {
   // quick luminance check to keep mockup text readable on any background
   const h = bgHex.replace("#", "");
   if (!/^[0-9a-fA-F]{6}$/.test(h)) return "#111827";

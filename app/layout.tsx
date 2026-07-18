@@ -5,9 +5,20 @@ import { GOOGLE_FONTS_HREF } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: "TypeSmith — Precision typography and UI design, in one tool",
   description:
     "Generate type scales, check WCAG contrast, pair fonts, and preview real-world mockups instantly. Free, no signup, shareable by link.",
+  openGraph: {
+    title: "TypeSmith — Precision typography and UI design, in one tool",
+    description:
+      "Generate type scales, check WCAG contrast, pair fonts, and preview real-world mockups instantly. Free, no signup, shareable by link.",
+    siteName: "TypeSmith",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({

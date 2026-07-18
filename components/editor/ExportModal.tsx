@@ -7,6 +7,7 @@ import { Button } from "@/components/ui";
 
 const EXTENSIONS: Record<ExportFormat, string> = {
   css: "css",
+  fluid: "css",
   scss: "scss",
   tailwind: "js",
   json: "json",
@@ -27,7 +28,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const code = useMemo(
     () => generate(p, format),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.projectName, p.author, p.unit, format, open]
+    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, format, open]
   );
 
   if (!open) return null;

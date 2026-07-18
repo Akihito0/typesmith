@@ -17,7 +17,9 @@ export function StyleGuidePanel() {
   const contrast = evaluateContrast(p.foreground, p.background);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 overflow-y-auto ts-scroll">
+    // h-full is load-bearing: the parent <main> is overflow-hidden, so without
+    // a height this panel just gets clipped instead of scrolling.
+    <div className="mx-auto h-full max-w-3xl space-y-4 overflow-y-auto pb-2 ts-scroll">
       {/* header */}
       <section className="rounded-card border border-line bg-white p-6 shadow-panel">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Style Guide</p>
@@ -48,12 +50,16 @@ export function StyleGuidePanel() {
         <div className="mt-5 space-y-2 border-t border-line pt-4">
           {[...scale].reverse().map((s) => (
             <div key={s.step} className="flex items-baseline gap-4">
-              <span className="w-24 shrink-0 text-right font-mono text-[11px] text-muted">
+              <span className="w-32 shrink-0 whitespace-nowrap text-right font-mono text-[11px] text-muted">
                 {s.label} · {toUnit(s.px, p.unit)}
               </span>
               <span
                 className="truncate text-ink"
-                style={{ fontFamily: heading.stack, fontSize: Math.min(s.px, 44) }}
+                style={{
+                  fontFamily: heading.stack,
+                  fontSize: Math.min(s.px, 44),
+                  letterSpacing: `${p.headingTracking}em`,
+                }}
               >
                 {p.previewText || "Modern Typography"}
               </span>
@@ -61,7 +67,8 @@ export function StyleGuidePanel() {
           ))}
         </div>
         <p className="mt-3 text-[11px] text-muted">
-          Base {p.base}px · ratio {p.ratio}
+          Base {p.base}px · ratio {p.ratio} · leading {p.headingLeading}/{p.bodyLeading} · tracking{" "}
+          {p.headingTracking}em
         </p>
       </section>
 

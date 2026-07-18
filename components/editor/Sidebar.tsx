@@ -16,6 +16,7 @@ const DESIGN_SYSTEM: { id: ToolId; label: string }[] = [
   { id: "colors", label: "Colors" },
 ];
 
+// "pro" items are badged but fully usable — free during the beta.
 const LAYOUTS: { id: ToolId; label: string; pro?: boolean }[] = [
   { id: "website", label: "Website" },
   { id: "mobile", label: "Mobile App" },
@@ -74,7 +75,7 @@ export function Sidebar({
               label={item.label}
               pro={item.pro}
               active={active === item.id}
-              onClick={item.pro ? undefined : () => onSelect(item.id)}
+              onClick={() => onSelect(item.id)}
             />
           ))}
         </Group>
@@ -120,13 +121,8 @@ function Item({
   return (
     <button
       onClick={onClick}
-      disabled={!onClick}
       className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[13px] transition-colors ${
-        active
-          ? "bg-brand-50 font-medium text-brand-700"
-          : onClick
-            ? "text-ink hover:bg-surface"
-            : "cursor-default text-muted/60"
+        active ? "bg-brand-50 font-medium text-brand-700" : "text-ink hover:bg-surface"
       }`}
     >
       <span>{label}</span>

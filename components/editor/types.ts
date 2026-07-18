@@ -4,7 +4,7 @@ export type ToolId =
   | "colors"
   | "website"
   | "mobile"
-  // Pro-locked layouts (roadmap) — navigable ids reserved, panels not built yet
+  // Pro-badged layouts — free to use during the beta
   | "slides"
   | "social"
   | "newsletter";

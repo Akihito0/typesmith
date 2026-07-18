@@ -20,6 +20,11 @@ export interface ProjectState {
   unit: Unit;
   previewText: string;
 
+  // Leading & tracking (heading line-height is unitless, tracking is em)
+  headingLeading: number;
+  bodyLeading: number;
+  headingTracking: number;
+
   // Color
   foreground: string; // hex
   background: string; // hex
@@ -59,6 +64,10 @@ const DEFAULT: ProjectState = {
   ratio: PRESETS[0].ratio,
   unit: "rem",
   previewText: "Modern Typography",
+
+  headingLeading: 1.1,
+  bodyLeading: 1.6,
+  headingTracking: -0.02,
 
   foreground: "#2563eb",
   background: "#ffffff",

@@ -11,7 +11,7 @@ import { fontById } from "@/lib/fonts";
 //   ratio bar: CONTRAST RATIO n.nn:1 · NORMAL TEXT PASS (AA) · LARGE TEXT PASS (AAA)
 //   preview card rendering real project copy in the chosen colors
 //   bottom feature cards: WCAG Standards · Color Blindness · Auto-Fixer
-export function ContrastPanel() {
+export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
   const p = useProject();
   const [cvd, setCvd] = useState<"none" | "protanopia" | "deuteranopia" | "tritanopia">("none");
 
@@ -65,7 +65,10 @@ export function ContrastPanel() {
                 {result.grade === "Fail" ? "✕ FAIL" : `✓ ${result.grade} PASS`}
               </span>
             )}
-            <button className="rounded-md border border-line px-2.5 py-1 text-[11px] font-medium text-ink hover:bg-surface">
+            <button
+              onClick={onGetCode}
+              className="rounded-md border border-line px-2.5 py-1 text-[11px] font-medium text-ink hover:bg-surface"
+            >
               Get Code
             </button>
           </div>
