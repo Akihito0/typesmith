@@ -39,7 +39,7 @@ jobs:
       - name: Verify export output
         run: test -f out/index.html && test -f out/editor.html
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: out
 
