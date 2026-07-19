@@ -5,7 +5,7 @@ import { useProject } from "@/lib/store";
 import { buildScale, toUnit, RATIO_PRESETS, type Unit } from "@/lib/scale";
 import { fontById } from "@/lib/fonts";
 import { generate } from "@/lib/export";
-import { Logo, Select, Toggle } from "@/components/ui";
+import { Select, Toggle } from "@/components/ui";
 
 // Screen 3: the dark editor canvas. Three columns —
 //   left: TYPE SCALE GENERATOR (base/size controls + scale rows with sliders)
@@ -16,6 +16,7 @@ export function TypeScalePanel() {
   const [showCode, setShowCode] = useState(false);
   const [liveExport, setLiveExport] = useState(true);
   const [manualCss, setManualCss] = useState("");
+  const [canvasDark, setCanvasDark] = useState(true);
 
   const scale = useMemo(
     () => buildScale(p.base, p.ratio, p.stepOverrides),
@@ -75,19 +76,32 @@ export function TypeScalePanel() {
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-canvas-line bg-canvas text-white">
+    <div data-theme={canvasDark ? "dark" : "light"} className="ts-canvas flex h-full flex-col overflow-hidden rounded-xl border">
       {/* canvas title bar */}
-      <div className="flex items-center justify-between border-b border-canvas-line px-4 py-2.5">
-        <Logo className="text-[13px] text-white" />
-        <span className="rounded bg-brand-600 px-2.5 py-1 text-[11px] font-medium">TypeSmith</span>
+      <div className="ts-canvas-bar flex items-center justify-between border-b px-4 py-2.5">
+        <span className="text-[13px] font-semibold tracking-wide">Type Scale Generator</span>
+        <button
+          onClick={() => setCanvasDark((d) => !d)}
+          aria-label={canvasDark ? "Switch to light mode" : "Switch to dark mode"}
+          title={canvasDark ? "Switch to light mode" : "Switch to dark mode"}
+          className="ts-theme-toggle grid h-7 w-7 place-items-center rounded-md transition-colors"
+        >
+          {canvasDark ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" />
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </button>
       </div>
 
       <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[230px_1fr_240px]">
         {/* LEFT — scale rows */}
         <div className="overflow-y-auto border-b border-canvas-line p-4 lg:border-b-0 lg:border-r ts-scroll">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-            Type Scale Generator
-          </p>
 
           {!isView && (
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -160,11 +174,6 @@ export function TypeScalePanel() {
             <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
               Font Pairing Preview
             </p>
-            {!isView && (
-              <span className="rounded border border-canvas-line px-2 py-0.5 text-[10px] text-gray-400">
-                View setting
-              </span>
-            )}
           </div>
 
           {/* Custom preview text — proposal: one field that live-updates everything */}
@@ -401,9 +410,9 @@ function StepSize({
           readOnly
             ? undefined
             : () => {
-                setDraft(String(Math.round(px)));
-                setEditing(true);
-              }
+              setDraft(String(Math.round(px)));
+              setEditing(true);
+            }
         }
         title={readOnly ? undefined : "Click to set an exact size (override)"}
         className={`font-medium text-gray-200 ${readOnly ? "cursor-default" : "hover:text-white"}`}
@@ -444,9 +453,8 @@ function CopySize({ value }: { value: string }) {
     <button
       onClick={copy}
       title={`Copy ${value}`}
-      className={`w-16 shrink-0 text-right font-mono text-[11px] ${
-        copied ? "text-pass" : "text-gray-500 hover:text-white"
-      }`}
+      className={`w-16 shrink-0 text-right font-mono text-[11px] ${copied ? "text-pass" : "text-gray-500 hover:text-white"
+        }`}
     >
       {copied ? "Copied" : value}
     </button>
