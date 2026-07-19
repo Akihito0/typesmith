@@ -6,20 +6,22 @@ import { useProject } from "@/lib/store";
 import { PRESETS, presetByName, randomPreset } from "@/lib/presets";
 import { buildShareUrl } from "@/lib/share";
 import { FontPicker } from "./FontPicker";
-import { Button, Check, Logo, Redo, Segmented, Select, Shuffle, Undo } from "@/components/ui";
+import { Button, Check, Chevron, Logo, Redo, Select, Shuffle, Undo } from "@/components/ui";
+import type { ToolId } from "./types";
+import { LAYOUTS } from "./Sidebar";
 
-// Top toolbar from the screenshots: Edit|View toggle, TypeSmith logo, preset
-// dropdown + shuffle, HEADING/BODY font pickers, SIZE + RATIO fields, then
-// Share / Export / Upgrade to Pro on the right. Below the xl breakpoint the
-// font/size/ratio controls collapse into the "Aa" type menu.
 export function Toolbar({
   onExport,
   onUpgrade,
   onMenu,
+  activeTool,
+  onSelectTool,
 }: {
   onExport: () => void;
   onUpgrade: () => void;
   onMenu?: () => void;
+  activeTool: ToolId;
+  onSelectTool: (t: ToolId) => void;
 }) {
   const project = useProject();
   const [copied, setCopied] = useState(false);
@@ -73,19 +75,11 @@ export function Toolbar({
           </svg>
         </button>
       )}
-      <Segmented
-        size="sm"
-        options={[
-          { label: "Edit", value: "edit" as const },
-          { label: "View", value: "view" as const },
-        ]}
-        value={project.mode}
-        onChange={(m) => project.set("mode", m)}
-      />
-
-      <Link href="/" className="ml-1">
+      <Link href="/" className="shrink-0">
         <Logo className="text-sm" />
       </Link>
+
+      <EditViewControl activeTool={activeTool} onSelectTool={onSelectTool} />
 
       <div className="mx-2 h-6 w-px bg-line" />
 
@@ -371,5 +365,109 @@ function SaveIndicator() {
     >
       <Check className="text-pass" /> Saved
     </span>
+  );
+}
+
+// Custom Edit / View control. "Edit" is a simple button that switches to edit
+// mode. "View" has a chevron and opens a dropdown with layout options; selecting
+// one switches to view mode and navigates to that layout panel.
+function EditViewControl({
+  activeTool,
+  onSelectTool,
+}: {
+  activeTool: ToolId;
+  onSelectTool: (t: ToolId) => void;
+}) {
+  const project = useProject();
+  const mode = project.mode;
+  const [viewOpen, setViewOpen] = useState(false);
+  const viewRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!viewOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (viewRef.current && !viewRef.current.contains(e.target as Node)) setViewOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setViewOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [viewOpen]);
+
+  return (
+    <div className="inline-flex rounded-md border border-line bg-surface p-0.5">
+      <button
+        type="button"
+        onClick={() => {
+          project.set("mode", "edit");
+          setViewOpen(false);
+        }}
+        className={`rounded px-2.5 h-6 text-xs font-medium transition-colors ${
+          mode === "edit" ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink"
+        }`}
+      >
+        Edit
+      </button>
+
+      <div ref={viewRef} className="relative">
+        <button
+          type="button"
+          onClick={() => {
+            const isLayout = LAYOUTS.some((l) => l.id === activeTool);
+            if (mode === "view") {
+              setViewOpen((o) => !o);
+            } else {
+              project.set("mode", "view");
+              if (!isLayout) onSelectTool(LAYOUTS[0].id);
+              setViewOpen(true);
+            }
+          }}
+          aria-expanded={viewOpen}
+          aria-haspopup="true"
+          className={`inline-flex items-center gap-0.5 rounded px-2.5 h-6 text-xs font-medium transition-colors ${
+            mode === "view" ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink"
+          }`}
+        >
+          View
+          <Chevron
+            className={`transition-transform duration-200 ${viewOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {viewOpen && (
+          <div className="absolute left-0 top-8 z-40 w-44 rounded-lg border border-line bg-white p-1 shadow-modal">
+            <p className="mb-1 px-2 pt-1 text-[9px] font-semibold uppercase tracking-wider text-muted">
+              Layouts
+            </p>
+            {LAYOUTS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  project.set("mode", "view");
+                  onSelectTool(item.id);
+                  setViewOpen(false);
+                }}
+                className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[13px] transition-colors ${
+                  activeTool === item.id && mode === "view"
+                    ? "bg-brand-50 font-medium text-brand-700"
+                    : "text-ink hover:bg-surface"
+                }`}
+              >
+                <span>{item.label}</span>
+                {item.pro && (
+                  <span className="rounded border border-line bg-white px-1.5 py-px text-[9px] font-semibold uppercase text-muted">
+                    Pro
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

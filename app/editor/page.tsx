@@ -120,6 +120,8 @@ function EditorInner() {
         onExport={() => setExportOpen(true)}
         onUpgrade={() => setProOpen(true)}
         onMenu={mode === "edit" ? () => setDrawerOpen(true) : undefined}
+        activeTool={tool}
+        onSelectTool={setTool}
       />
       <div className="flex min-h-0 flex-1 print-expand print:block">
         {/* Sidebar: inline on md+, a drawer below (hamburger in the toolbar) */}
