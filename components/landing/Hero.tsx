@@ -38,12 +38,12 @@ export function Hero() {
       className="relative flex flex-1 items-center overflow-hidden bg-canvas py-8 text-white"
     >
       <div className="mx-auto w-full max-w-[120rem] px-6 md:px-10">
-        <div className="grid grid-cols-1 items-center gap-9 lg:grid-cols-[minmax(190px,250px)_1fr_minmax(190px,250px)] lg:gap-7 xl:gap-9">
+        <div className="grid grid-cols-1 items-center gap-9 lg:grid-cols-[minmax(230px,320px)_1fr_minmax(230px,320px)] lg:gap-7 xl:gap-9">
           {/* Left rail — the headline */}
           <h1
             ref={headRef}
             className="font-display font-medium tracking-tight text-white will-change-transform"
-            style={{ fontSize: "clamp(1.6rem, 1.8vw, 2.05rem)", lineHeight: 1.12 }}
+            style={{ fontSize: "clamp(1.9rem, 2.4vw, 2.6rem)", lineHeight: 1.1 }}
           >
             <span className="reveal-mask">
               <span className="reveal-line whitespace-nowrap" style={{ animationDelay: "0.05s" }}>
@@ -73,23 +73,34 @@ export function Hero() {
           {/* Center — THE SHOWCASE, the focal object. The inner cap keeps the
               panel from outgrowing the viewport height (16.5rem ≈ nav +
               marquee + panel chrome + padding), so the marquee always rides
-              the bottom edge of the first screen. */}
+              the bottom edge of the first screen. Settles in after the
+              headline's first lines. */}
           <div className="order-3 min-w-0 lg:order-none">
-            <div className="mx-auto lg:max-w-[calc((100vh-16.5rem)*1.6)]">
+            <div
+              className="hero-item mx-auto lg:max-w-[calc((100vh-16.5rem)*1.6)]"
+              style={{ animationDelay: "0.3s" }}
+            >
               <HeroShowcase />
             </div>
           </div>
 
-          {/* Right rail — pitch + CTAs, mirrored to the right edge */}
+          {/* Right rail — pitch + CTAs, mirrored to the right edge; they
+              close the entrance sequence. */}
           <div className="lg:text-right">
-            <p className="text-[14px] leading-relaxed text-gray-400">
+            <p
+              className="hero-item text-[16px] leading-relaxed text-gray-400"
+              style={{ animationDelay: "0.55s" }}
+            >
               Generate type scales, check contrast, and preview real-world mockups instantly. Built
               for designers who value mathematical rigor.
             </p>
-            <div className="mt-6 flex flex-wrap items-center gap-x-7 gap-y-4 lg:justify-end">
+            <div
+              className="hero-item mt-6 flex flex-wrap items-center gap-x-7 gap-y-4 lg:justify-end"
+              style={{ animationDelay: "0.7s" }}
+            >
               <Link
                 href="/editor"
-                className="chamfer group relative inline-flex items-center gap-2 bg-brand-600 px-6 py-3 font-mono text-[11px] uppercase tracking-[0.15em] text-white transition-colors hover:bg-brand-700"
+                className="chamfer group relative inline-flex items-center gap-2 bg-brand-600 px-7 py-3.5 font-mono text-[12px] uppercase tracking-[0.15em] text-white transition-colors hover:bg-brand-700"
               >
                 Start tuning
                 <span
@@ -101,7 +112,7 @@ export function Hero() {
               </Link>
               <a
                 href="#editions"
-                className="link-underline font-mono text-[11px] uppercase tracking-[0.15em] text-gray-400 hover:text-brand-100"
+                className="link-underline font-mono text-[12px] uppercase tracking-[0.15em] text-gray-400 hover:text-brand-100"
               >
                 View editions
               </a>

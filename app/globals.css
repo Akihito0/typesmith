@@ -99,6 +99,24 @@ input[type="range"].ts-range::-moz-range-thumb {
   will-change: transform, opacity, filter;
 }
 
+/* Hero load-in choreography: after the headline's masked line reveals, the
+   showcase settles into place and the pitch/CTAs follow — one sequenced
+   entrance, front-loaded easing, no bounce. Delays are set inline per
+   element; prefers-reduced-motion collapses it all to an instant page. */
+@keyframes hero-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.hero-item {
+  animation: hero-item-in 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Hero showcase: per-beat progress hairline and the export scene's
    line-by-line code type-on. (Frame swaps are opacity-only toggles on
    stacked images — deliberately no entrance animation, so a "press" changes
