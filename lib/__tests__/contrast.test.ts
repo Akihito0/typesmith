@@ -5,6 +5,8 @@ import {
   evaluateContrast,
   formatRatio,
   simulateCvd,
+  apcaContrast,
+  apcaGrade,
 } from "../contrast";
 
 describe("hexToRgb", () => {
@@ -64,6 +66,31 @@ describe("formatRatio", () => {
   it("renders two decimals with the :1 suffix", () => {
     expect(formatRatio(4.5)).toBe("4.50:1");
     expect(formatRatio(21)).toBe("21.00:1");
+  });
+});
+
+describe("apcaContrast", () => {
+  it("gives Lc ≈ +106 for black on white and ≈ -108 for white on black", () => {
+    const dark = apcaContrast("#000000", "#ffffff")!;
+    expect(dark).toBeGreaterThan(100);
+    expect(dark).toBeLessThan(110);
+    const light = apcaContrast("#ffffff", "#000000")!;
+    expect(light).toBeLessThan(-100);
+    expect(light).toBeGreaterThan(-112);
+  });
+
+  it("is 0 for identical colors and null for invalid input", () => {
+    expect(apcaContrast("#808080", "#808080")).toBe(0);
+    expect(apcaContrast("nope", "#ffffff")).toBeNull();
+  });
+
+  it("grades by |Lc| bands", () => {
+    expect(apcaGrade(90)).toBe("Body");
+    expect(apcaGrade(-76)).toBe("Body");
+    expect(apcaGrade(60)).toBe("Large");
+    expect(apcaGrade(45)).toBe("Headline");
+    expect(apcaGrade(30)).toBe("Non-text");
+    expect(apcaGrade(12)).toBe("Fail");
   });
 });
 

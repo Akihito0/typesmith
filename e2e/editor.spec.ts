@@ -146,6 +146,37 @@ test("heading weight flows into the style guide", async ({ page }) => {
   await expect(page.getByText("weights 400/400")).toBeVisible();
 });
 
+test("per-step override edits one size and resets to the formula", async ({ page }) => {
+  await page.getByRole("button", { name: "16px" }).click();
+  await page.getByLabel("Step size override in px").fill("18");
+  await page.getByLabel("Step size override in px").press("Enter");
+  await expect(page.getByRole("button", { name: /18px/ })).toBeVisible();
+  // Other steps keep the formula (H1 stays 49px at 16/1.25).
+  await expect(page.getByRole("button", { name: "49px" })).toBeVisible();
+  await page.getByRole("button", { name: "Reset override" }).click();
+  await expect(page.getByRole("button", { name: "16px" })).toBeVisible();
+});
+
+test("apca mode reports an Lc value", async ({ page }) => {
+  await page.getByRole("button", { name: "Colors" }).click();
+  await page.getByRole("button", { name: "APCA" }).click();
+  await expect(page.getByText(/Lc -?\d/)).toBeVisible();
+});
+
+test("workspace supports duplicate and backup export", async ({ page }) => {
+  await page.getByRole("button", { name: "Switch project" }).click();
+  await expect(page.getByText("Export backup")).toBeVisible();
+  const row = page.locator(".group", { hasText: "TypeSmith Mobile" }).first();
+  await row.hover();
+  await row.getByRole("button", { name: /Duplicate/ }).click();
+  await expect(page.getByLabel("Project name")).toHaveValue("TypeSmith Mobile Copy");
+});
+
+test("social panel includes the 9:16 story artboard", async ({ page }) => {
+  await page.getByRole("button", { name: "Social" }).click();
+  await expect(page.getByText("Swipe up ->")).toBeVisible();
+});
+
 test("slides offer a present button and newsletter a html download", async ({ page }) => {
   await page.getByRole("button", { name: "Slides" }).click();
   await expect(page.getByRole("button", { name: "Present" })).toBeVisible();

@@ -46,10 +46,14 @@ function MarqueeTrack({ hidden }: { hidden?: boolean }) {
 }
 
 export function Marquee() {
+  // Four copies so the -50% loop point is always covered: with only two, the
+  // track runs out on viewports wider than one copy and the loop shows a gap.
   return (
     <div className="overflow-hidden border-y border-canvas-line bg-canvas py-5 text-white">
       <div className="marquee-track">
         <MarqueeTrack />
+        <MarqueeTrack hidden />
+        <MarqueeTrack hidden />
         <MarqueeTrack hidden />
       </div>
     </div>
@@ -148,7 +152,7 @@ function PairingDemo() {
       </button>
       <div key={swapKey} className="swap-in mt-6">
         <p className="text-[26px] leading-tight text-ink" style={{ fontFamily: heading.stack }}>
-          Heading 24px
+          Modern Typography
         </p>
         <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-muted" style={{ fontFamily: body.stack }}>
           The quick brown fox jumps over the lazy dog.
@@ -180,6 +184,40 @@ function VerdictChip({ label, pass }: { label: string; pass: boolean }) {
   );
 }
 
+function SwatchRow({
+  label,
+  activeIndex,
+  onPick,
+}: {
+  label: string;
+  activeIndex: number;
+  onPick: (i: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-6 shrink-0 font-mono text-[9px] uppercase tracking-[0.15em] text-muted">
+        {label}
+      </span>
+      {CONTRAST_SWATCHES.map((s, i) => (
+        <button
+          key={s.name}
+          type="button"
+          onClick={() => onPick(i)}
+          aria-pressed={i === activeIndex}
+          aria-label={`${label === "FG" ? "Foreground" : "Background"}: ${s.name}`}
+          title={s.name}
+          className={`h-7 w-7 border transition-all ${
+            i === activeIndex
+              ? "border-brand-600 ring-1 ring-brand-600 ring-offset-1"
+              : "border-line hover:border-brand-600"
+          }`}
+          style={{ backgroundColor: s.hex }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function ContrastDemo() {
   const [fgIndex, setFgIndex] = useState(0);
   const [bgIndex, setBgIndex] = useState(1);
@@ -189,30 +227,13 @@ function ContrastDemo() {
 
   return (
     <div>
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={() => setFgIndex((i) => (i + 1) % CONTRAST_SWATCHES.length)}
-          className="chamfer-sm h-11 w-11 border border-line transition-transform hover:scale-105"
-          style={{ backgroundColor: fg.hex }}
-          aria-label={`Foreground swatch, currently ${fg.name}. Click to cycle.`}
-        />
-        <button
-          type="button"
-          onClick={() => setBgIndex((i) => (i + 1) % CONTRAST_SWATCHES.length)}
-          className="chamfer-sm h-11 w-11 border border-line transition-transform hover:scale-105"
-          style={{ backgroundColor: bg.hex }}
-          aria-label={`Background swatch, currently ${bg.name}. Click to cycle.`}
-        />
-        <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">
-          <p>
-            FG <span className="text-ink">{fg.name}</span> / BG <span className="text-ink">{bg.name}</span>
-          </p>
-          <p className="mt-1 text-ink">{result ? formatRatio(result.ratio) : "—"}</p>
-        </div>
+      <div className="space-y-2.5">
+        <SwatchRow label="FG" activeIndex={fgIndex} onPick={setFgIndex} />
+        <SwatchRow label="BG" activeIndex={bgIndex} onPick={setBgIndex} />
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10px] uppercase tracking-[0.15em]">
+        <span className="text-ink">{result ? formatRatio(result.ratio) : "—"}</span>
         {result && (
           <>
             <VerdictChip label="AA" pass={result.normalAA} />
@@ -364,7 +385,7 @@ export function Instruments() {
     {
       index: "03",
       title: "Contrast",
-      body: "Every foreground/background pair checked against WCAG as you pick colors.",
+      body: "Every text/surface pair graded against WCAG 2 and APCA as you pick colors.",
       demo: <ContrastDemo />,
     },
     {
@@ -378,7 +399,7 @@ export function Instruments() {
   return (
     <section id="instruments" className="mx-auto max-w-6xl px-6 md:px-10">
       <h2 className="flex flex-wrap items-center gap-3 border-t border-line py-6 font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
-        <span className="text-brand-600">03</span>
+        <span className="text-brand-600">02</span>
         Instruments
         <span className="h-px flex-1 bg-line" />
         <span className="text-brand-600">Interactive &mdash; try them</span>
@@ -403,7 +424,7 @@ export function Doctrine() {
   return (
     <section id="doctrine" className="mx-auto max-w-6xl px-6 md:px-10">
       <h2 className="flex items-center gap-3 border-t border-line py-6 font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
-        <span className="text-brand-600">04</span>
+        <span className="text-brand-600">03</span>
         Doctrine
         <span className="h-px flex-1 bg-line" />
       </h2>
@@ -448,9 +469,10 @@ const COMMUNITY_FEATURES = [
 ];
 const PRO_FEATURES = [
   "Everything in Community",
-  "Extra font pairing presets",
-  "Extra layout templates",
-  "White-label export (CSS/Figma)",
+  "Slides, Social & Newsletter layouts",
+  "Google Fonts catalog + font upload",
+  "Fluid clamp() & W3C token exports",
+  "Multi-project workspace",
 ];
 
 export function Editions({ onStart }: { onStart: () => void }) {
@@ -458,14 +480,14 @@ export function Editions({ onStart }: { onStart: () => void }) {
   return (
     <section id="editions" className="mx-auto max-w-6xl px-6 md:px-10">
       <h2 className="flex items-center gap-3 border-t border-line py-6 font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
-        <span className="text-brand-600">05</span>
+        <span className="text-brand-600">04</span>
         Editions
         <span className="h-px flex-1 bg-line" />
       </h2>
 
       <div ref={ref} className={`reveal-row grid grid-cols-1 border-t border-line md:grid-cols-2 ${revealClass}`}>
         {/* Community */}
-        <div className="reveal-item border-b border-line py-10 md:border-b-0 md:border-r md:border-line md:pr-10" style={delay(0)}>
+        <div className="reveal-item flex flex-col border-b border-line py-10 md:border-b-0 md:border-r md:border-line md:pr-10" style={delay(0)}>
           <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
             Community
           </p>
@@ -477,16 +499,18 @@ export function Editions({ onStart }: { onStart: () => void }) {
               </li>
             ))}
           </ul>
-          <button
-            onClick={onStart}
-            className="chamfer group mt-10 flex w-full items-center justify-center gap-2 bg-ink px-6 py-3 font-mono text-[11px] uppercase tracking-[0.15em] text-white transition-colors hover:bg-black"
-          >
-            Start Free
-          </button>
+          <div className="mt-auto pt-10">
+            <button
+              onClick={onStart}
+              className="chamfer group flex h-12 w-full items-center justify-center gap-2 bg-ink px-6 font-mono text-[11px] uppercase tracking-[0.15em] text-white transition-colors hover:bg-black"
+            >
+              Start Free
+            </button>
+          </div>
         </div>
 
         {/* Professional */}
-        <div className="reveal-item py-10 md:pl-10" style={delay(1)}>
+        <div className="reveal-item flex flex-col py-10 md:pl-10" style={delay(1)}>
           {/* Tag on its own line so it never clips at narrow widths */}
           <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-brand-600">
             Recommended -&gt;
@@ -495,8 +519,8 @@ export function Editions({ onStart }: { onStart: () => void }) {
             Professional
           </p>
           <p className="mt-4 font-display text-6xl font-semibold text-ink">
-            <span className="align-baseline text-[0.5em]">$</span>49{" "}
-            <span className="font-mono text-sm font-normal text-muted">one-time</span>
+            Free{" "}
+            <span className="font-mono text-sm font-normal text-muted">while in beta</span>
           </p>
           <ul className="mt-8 space-y-2.5">
             {PRO_FEATURES.map((f) => (
@@ -505,12 +529,14 @@ export function Editions({ onStart }: { onStart: () => void }) {
               </li>
             ))}
           </ul>
-          <Link
-            href="/editor"
-            className="chamfer group mt-10 flex w-full items-center justify-center gap-2 bg-brand-600 px-6 py-3 font-mono text-[11px] uppercase tracking-[0.15em] text-white transition-colors hover:bg-brand-700"
-          >
-            Get Pro
-          </Link>
+          <div className="mt-auto pt-10">
+            <Link
+              href="/editor"
+              className="chamfer group flex h-12 w-full items-center justify-center gap-2 bg-brand-600 px-6 font-mono text-[11px] uppercase tracking-[0.15em] text-white transition-colors hover:bg-brand-700"
+            >
+              Open Pro Layouts
+            </Link>
+          </div>
         </div>
       </div>
     </section>
@@ -525,8 +551,8 @@ export function Editions({ onStart }: { onStart: () => void }) {
 // ============================================================================
 const COLOPHON_STATS = [
   { label: "Ratio presets", value: 8 },
-  { label: "Preview faces", value: 9 },
-  { label: "Instruments", value: 4 },
+  { label: "Fonts in catalog", value: 100 },
+  { label: "Live layouts", value: 5 },
   { label: "Signups required", value: 0 },
 ];
 
@@ -561,7 +587,7 @@ export function Colophon() {
   const counting = revealClass.includes("is-in");
 
   return (
-    <footer id="docs" className="grid-blueprint-faint relative mt-6 overflow-hidden border-t border-canvas-line bg-canvas text-white">
+    <footer id="docs" className="relative mt-6 overflow-hidden border-t border-canvas-line bg-canvas text-white">
       <div className="relative mx-auto max-w-6xl px-6 pt-16 md:px-10">
         <div ref={ref} className={`reveal-lines ${revealClass}`}>
           <h2 className="font-display text-4xl font-medium text-white md:text-5xl">

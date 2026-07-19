@@ -27,7 +27,7 @@ function colorEntries(state: ProjectState): [string, string][] {
 }
 
 function scaleTokens(state: ProjectState) {
-  return buildScale(state.base, state.ratio).map((s) => ({
+  return buildScale(state.base, state.ratio, state.stepOverrides).map((s) => ({
     key: s.label.toLowerCase().replace(/\s+/g, "-"),
     rem: Math.round((s.px / 16) * 1000) / 1000,
     px: s.px,
@@ -63,6 +63,7 @@ export function generate(state: ProjectState, format: ExportFormat, minify = fal
       minVw: state.fluidMinVw,
       maxVw: state.fluidMaxVw,
       minScale: state.fluidMinScale,
+      overrides: state.stepOverrides,
     }).map((s) => ({
       key: s.label.toLowerCase().replace(/\s+/g, "-"),
       ...s,

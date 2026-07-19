@@ -63,6 +63,52 @@ export function formatRatio(ratio: number): string {
   return `${ratio.toFixed(2)}:1`;
 }
 
+// --- APCA (WCAG 3 draft) ---------------------------------------------------
+// Accessible Perceptual Contrast Algorithm, SAPC-4g constants. Returns Lc
+// (lightness contrast): positive for dark text on light backgrounds, negative
+// for light-on-dark, magnitude 0..~106. Rough guidance: |Lc| ≥ 90 preferred
+// body, ≥ 75 body minimum, ≥ 60 large/bold text, ≥ 45 headlines, ≥ 30
+// non-text. Not a clinical implementation — a design-guidance port.
+
+function apcaScreenLuminance([r, g, b]: [number, number, number]): number {
+  const lin = (c: number) => Math.pow(c / 255, 2.4);
+  let y = 0.2126729 * lin(r) + 0.7151522 * lin(g) + 0.072175 * lin(b);
+  // Soft clamp near black.
+  if (y < 0.022) y += Math.pow(0.022 - y, 1.414);
+  return y;
+}
+
+export function apcaContrast(fg: string, bg: string): number | null {
+  const f = hexToRgb(fg);
+  const g = hexToRgb(bg);
+  if (!f || !g) return null;
+  const ytx = apcaScreenLuminance(f);
+  const ybg = apcaScreenLuminance(g);
+
+  let sapc: number;
+  if (ybg > ytx) {
+    // dark text on light background ("normal" polarity)
+    sapc = (Math.pow(ybg, 0.56) - Math.pow(ytx, 0.57)) * 1.14;
+    if (sapc < 0.1) return 0;
+    return Math.round((sapc - 0.027) * 1000) / 10;
+  }
+  // light text on dark background ("reverse" polarity)
+  sapc = (Math.pow(ybg, 0.65) - Math.pow(ytx, 0.62)) * 1.14;
+  if (sapc > -0.1) return 0;
+  return Math.round((sapc + 0.027) * 1000) / 10;
+}
+
+export type ApcaGrade = "Body" | "Large" | "Headline" | "Non-text" | "Fail";
+
+export function apcaGrade(lc: number): ApcaGrade {
+  const a = Math.abs(lc);
+  if (a >= 75) return "Body";
+  if (a >= 60) return "Large";
+  if (a >= 45) return "Headline";
+  if (a >= 30) return "Non-text";
+  return "Fail";
+}
+
 // --- Color-blindness simulation (proposal roadmap item) -------------------
 // Approximate matrices for the three common dichromacies. Good enough for a
 // design-preview toggle; not a clinical tool.

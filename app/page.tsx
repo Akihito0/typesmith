@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { Nav } from "@/components/landing/Nav";
 import { Hero } from "@/components/landing/Hero";
-import { Ramp } from "@/components/landing/Ramp";
 import { Marquee, Instruments, Doctrine, Editions, Colophon } from "@/components/landing/Sections";
 import { AuthModal } from "@/components/landing/AuthModal";
 
-// v5 page order — dark bookends, a scroll-driven pinned interlude, and a
-// light editorial middle:
-// 01 Specimen (hero) -> marquee -> 02 The Ramp (pinned scroll traverse) ->
-// 03 Instruments -> 04 Doctrine -> 05 Editions -> 06 Colophon.
+// v6 page order — dark bookends around a light editorial middle, no scroll
+// hijacking, blueprint grid contained to the specimen panel:
+// 01 Specimen (hero + live specimen panel) -> marquee -> 02 Instruments ->
+// 03 Doctrine -> 04 Editions -> 05 Colophon.
 export default function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
 
@@ -19,7 +18,6 @@ export default function LandingPage() {
       <Nav onLogin={() => setAuthOpen(true)} />
       <Hero />
       <Marquee />
-      <Ramp />
       <Instruments />
       <Doctrine />
       <Editions onStart={() => setAuthOpen(true)} />

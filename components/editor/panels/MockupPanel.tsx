@@ -15,7 +15,7 @@ import { Toggle } from "@/components/ui";
 
 function useDesign() {
   const p = useProject();
-  const scale = useMemo(() => buildScale(p.base, p.ratio), [p.base, p.ratio]);
+  const scale = useMemo(() => buildScale(p.base, p.ratio, p.stepOverrides), [p.base, p.ratio, p.stepOverrides]);
   return {
     p,
     scale,
@@ -76,22 +76,31 @@ export function WebsiteMockup() {
             </span>
           </div>
 
-          {/* page body — everything below reads live project state */}
+          {/* page body — everything below reads live project state. Layout
+              responds to the FRAME width (the `width` toggle), not the
+              browser viewport — CSS breakpoints don't know how narrow the
+              frame is. */}
           <div style={{ background: p.background, color: readableInk(p.background) }}>
             {/* nav */}
-            <div className="flex items-center justify-between px-8 py-4">
+            <div
+              className={`flex items-center justify-between gap-3 py-4 ${
+                width === "mobile" ? "px-4" : "px-8"
+              }`}
+            >
               <span className="flex items-center gap-2 text-sm font-semibold" style={{ fontFamily: heading.stack }}>
-                <span className="grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: readableInk(p.background) }}>
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: readableInk(p.background) }}>
                   V
                 </span>
-                Vantage Product
+                <span className="whitespace-nowrap">{width === "mobile" ? "Vantage" : "Vantage Product"}</span>
               </span>
-              <span className="hidden gap-6 text-xs opacity-70 sm:flex" style={{ fontFamily: body.stack }}>
-                <span>Features</span>
-                <span>Pricing</span>
-              </span>
+              {width !== "mobile" && (
+                <span className="flex gap-6 text-xs opacity-70" style={{ fontFamily: body.stack }}>
+                  <span>Features</span>
+                  <span>Pricing</span>
+                </span>
+              )}
               <span
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
+                className="shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-white"
                 style={{ background: readableInk(p.background), fontFamily: body.stack }}
               >
                 Get Started
@@ -99,7 +108,7 @@ export function WebsiteMockup() {
             </div>
 
             {/* hero */}
-            <div className="px-8 pb-14 pt-10 text-center">
+            <div className={`pb-14 pt-10 text-center ${width === "mobile" ? "px-5" : "px-8"}`}>
               <p
                 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em]"
                 style={{ fontFamily: body.stack, color: p.accent }}
@@ -139,7 +148,12 @@ export function WebsiteMockup() {
             </div>
 
             {/* feature strip + footer */}
-            <div className="grid grid-cols-3 gap-3 border-t px-8 py-6" style={{ borderColor: "rgba(127,127,127,0.2)" }}>
+            <div
+              className={`grid gap-3 border-t py-6 ${
+                width === "mobile" ? "grid-cols-1 px-4" : "grid-cols-3 px-8"
+              }`}
+              style={{ borderColor: "rgba(127,127,127,0.2)" }}
+            >
               {["Scale", "Contrast", "Export"].map((f) => (
                 <div key={f} className="rounded-md border p-3 text-center" style={{ borderColor: "rgba(127,127,127,0.2)" }}>
                   <p className="text-xs font-semibold" style={{ fontFamily: heading.stack }}>{f}</p>
@@ -255,7 +269,7 @@ export function MockupControls() {
   const code = useMemo(
     () => generate(p, format, minify),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.mutedColor, p.surfaceColor, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, p.headingWeight, p.bodyWeight, p.fluidMinVw, p.fluidMaxVw, p.fluidMinScale, format, minify]
+    [p.base, p.ratio, p.stepOverrides, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.mutedColor, p.surfaceColor, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, p.headingWeight, p.bodyWeight, p.fluidMinVw, p.fluidMaxVw, p.fluidMinScale, format, minify]
   );
 
   return (

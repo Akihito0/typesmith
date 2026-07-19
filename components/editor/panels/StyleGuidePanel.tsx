@@ -11,7 +11,7 @@ import { evaluateContrast, formatRatio } from "@/lib/contrast";
 // screen the Edit/View toggle is really for.
 export function StyleGuidePanel() {
   const p = useProject();
-  const scale = useMemo(() => buildScale(p.base, p.ratio), [p.base, p.ratio]);
+  const scale = useMemo(() => buildScale(p.base, p.ratio, p.stepOverrides), [p.base, p.ratio, p.stepOverrides]);
   const heading = fontById(p.headingFont);
   const body = fontById(p.bodyFont);
   const contrast = evaluateContrast(p.foreground, p.background);

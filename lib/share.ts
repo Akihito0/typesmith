@@ -16,6 +16,7 @@ const KEY_MAP: Record<keyof ProjectState, string> = {
   ratio: "rt",
   unit: "un",
   previewText: "pt",
+  stepOverrides: "so",
   headingLeading: "hlh",
   bodyLeading: "blh",
   headingTracking: "htk",

@@ -27,6 +27,15 @@ describe("buildScale", () => {
     expect(scale[scale.length - 1]).toMatchObject({ step: 5, label: "H1" });
   });
 
+  it("lets a per-step override win over the formula", () => {
+    const scale = buildScale(16, 1.25, { 5: 60, [-2]: 11 });
+    expect(scale.find((s) => s.step === 5)!.px).toBe(60);
+    expect(scale.find((s) => s.step === -2)!.px).toBe(11);
+    // untouched steps still follow the formula
+    expect(scale.find((s) => s.step === 0)!.px).toBe(16);
+    expect(scale.find((s) => s.step === 1)!.px).toBe(20);
+  });
+
   it("is strictly increasing for every ratio preset", () => {
     for (const { value } of RATIO_PRESETS) {
       const scale = buildScale(16, value);
@@ -74,6 +83,13 @@ describe("fluid scale", () => {
 
   it("degenerates to a plain rem value when min equals max", () => {
     expect(clampExpr(16, 16)).toBe("1rem");
+  });
+
+  it("applies per-step overrides in fluid scales, compressed on mobile", () => {
+    const fluid = buildFluidScale(16, 1.25, { overrides: { 5: 60 } });
+    const h1 = fluid.find((s) => s.step === 5)!;
+    expect(h1.maxPx).toBe(60);
+    expect(h1.minPx).toBeCloseTo(52.5, 1); // 60 × 0.875
   });
 
   it("honors custom viewport bounds and mobile scale", () => {

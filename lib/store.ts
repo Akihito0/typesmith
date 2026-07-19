@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Unit } from "./scale";
+import type { Unit, StepOverrides } from "./scale";
 import { PRESETS, type Preset } from "./presets";
 
 // The whole project is one state object. Type scale, fonts, colors, mockups,
@@ -19,6 +19,8 @@ export interface ProjectState {
   ratio: number;
   unit: Unit;
   previewText: string;
+  /** Per-step px nudges on top of the modular formula (step index → px). */
+  stepOverrides: StepOverrides;
 
   // Leading & tracking (heading line-height is unitless, tracking is em)
   headingLeading: number;
@@ -53,6 +55,8 @@ export interface ProjectState {
 
 export interface ProjectActions {
   set: <K extends keyof ProjectState>(key: K, value: ProjectState[K]) => void;
+  /** Set (px) or clear (null) a per-step size override. */
+  setStepOverride: (step: number, px: number | null) => void;
   applyPreset: (p: Preset) => void;
   hydrate: (partial: Partial<ProjectState>) => void;
   /** Start a fresh project (undoable). */
@@ -76,6 +80,7 @@ const DEFAULT: ProjectState = {
   ratio: PRESETS[0].ratio,
   unit: "rem",
   previewText: "Modern Typography",
+  stepOverrides: {},
 
   headingLeading: 1.1,
   bodyLeading: 1.6,
@@ -150,6 +155,15 @@ export const useProject = create<Store>()(
           } as Partial<Store>;
         }),
 
+      setStepOverride: (step, px) =>
+        set((s) => {
+          lastEditKey = null;
+          const stepOverrides = { ...s.stepOverrides };
+          if (px === null) delete stepOverrides[step];
+          else stepOverrides[step] = px;
+          return { stepOverrides, past: pushPast(s), future: [] };
+        }),
+
       applyPreset: (p) =>
         set((s) => {
           lastEditKey = null;
@@ -158,6 +172,7 @@ export const useProject = create<Store>()(
             bodyFont: p.body,
             base: p.base,
             ratio: p.ratio,
+            stepOverrides: {},
             past: pushPast(s),
             future: [],
           };

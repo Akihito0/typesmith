@@ -29,7 +29,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const code = useMemo(
     () => generate(p, format),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.mutedColor, p.surfaceColor, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, p.headingWeight, p.bodyWeight, p.fluidMinVw, p.fluidMaxVw, p.fluidMinScale, format, open]
+    [p.base, p.ratio, p.stepOverrides, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.mutedColor, p.surfaceColor, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, p.headingWeight, p.bodyWeight, p.fluidMinVw, p.fluidMaxVw, p.fluidMinScale, format, open]
   );
 
   if (!open) return null;

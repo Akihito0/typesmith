@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useProject } from "@/lib/store";
-import { evaluateContrast, formatRatio, simulateCvd, hexToRgb } from "@/lib/contrast";
+import { evaluateContrast, formatRatio, simulateCvd, hexToRgb, apcaContrast, apcaGrade } from "@/lib/contrast";
 import { fontById } from "@/lib/fonts";
+import { Segmented } from "@/components/ui";
 
 // Screen 5: Color Contrast Checker.
 //   header: title + AA PASS badge + Get Code
@@ -14,11 +15,13 @@ import { fontById } from "@/lib/fonts";
 export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
   const p = useProject();
   const [cvd, setCvd] = useState<"none" | "protanopia" | "deuteranopia" | "tritanopia">("none");
+  const [algo, setAlgo] = useState<"wcag" | "apca">("wcag");
 
   const fg = cvd === "none" ? p.foreground : simulateCvd(p.foreground, cvd);
   const bg = cvd === "none" ? p.background : simulateCvd(p.background, cvd);
 
   const result = useMemo(() => evaluateContrast(fg, bg), [fg, bg]);
+  const lc = useMemo(() => apcaContrast(fg, bg), [fg, bg]);
   const heading = fontById(p.headingFont);
   const body = fontById(p.bodyFont);
 
@@ -110,16 +113,41 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
 
         {/* ratio bar */}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md bg-surface px-4 py-3">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-            Contrast Ratio{" "}
-            <b className="ml-1 font-mono text-sm normal-case tracking-normal text-ink">
-              {result ? formatRatio(result.ratio) : "—"}
-            </b>
+          <span className="flex items-center gap-3">
+            <Segmented
+              size="sm"
+              options={[
+                { label: "WCAG 2", value: "wcag" as const },
+                { label: "APCA", value: "apca" as const },
+              ]}
+              value={algo}
+              onChange={setAlgo}
+            />
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+              {algo === "wcag" ? "Contrast Ratio" : "Lightness Contrast"}{" "}
+              <b className="ml-1 font-mono text-sm normal-case tracking-normal text-ink">
+                {algo === "wcag"
+                  ? result
+                    ? formatRatio(result.ratio)
+                    : "—"
+                  : lc !== null
+                    ? `Lc ${lc}`
+                    : "—"}
+              </b>
+            </span>
           </span>
-          {result && (
+          {algo === "wcag" && result && (
             <span className="flex gap-5 text-[11px] font-medium">
               <Badge ok={result.normalAA} label={`Normal text ${result.normalAAA ? "(AAA)" : "(AA)"}`} pass={result.normalAA} />
               <Badge ok={result.largeAA} label={`Large text ${result.largeAAA ? "(AAA)" : "(AA)"}`} pass={result.largeAA} />
+            </span>
+          )}
+          {algo === "apca" && lc !== null && (
+            <span className="text-[11px] font-medium">
+              <span className={apcaGrade(lc) === "Fail" ? "text-fail" : "text-pass"}>
+                {apcaGrade(lc) === "Fail" ? "FAIL" : `OK for ${apcaGrade(lc).toLowerCase()} text`}
+              </span>{" "}
+              <span className="text-muted">· |Lc| ≥ 75 body, ≥ 60 large, ≥ 45 headline</span>
             </span>
           )}
         </div>

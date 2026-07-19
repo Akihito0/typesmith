@@ -29,16 +29,22 @@ export const RATIO_PRESETS: { name: string; value: number }[] = [
 // Labels applied from the smallest step upward, then the base sits at "Body".
 const STEP_LABELS = ["Caption", "Small", "Body", "Lead", "H4", "H3", "H2", "H1", "Display"];
 
+/** Per-step size overrides (px), keyed by step index — a nudge on top of the
+ *  modular formula (cap Display, bump Caption) without abandoning it. */
+export type StepOverrides = Record<number, number>;
+
 /**
  * Build a scale. We render two steps below the base and up to five above,
- * which covers caption → display for a typical interface.
+ * which covers caption → display for a typical interface. An override wins
+ * over the formula for its step.
  */
-export function buildScale(base: number, ratio: number): ScaleStep[] {
+export function buildScale(base: number, ratio: number, overrides?: StepOverrides): ScaleStep[] {
   const from = -2;
   const to = 5;
   const steps: ScaleStep[] = [];
   for (let step = from; step <= to; step++) {
-    const px = Math.round(base * Math.pow(ratio, step) * 100) / 100;
+    const formula = Math.round(base * Math.pow(ratio, step) * 100) / 100;
+    const px = overrides?.[step] ?? formula;
     const labelIndex = step - from; // 0-based from the smallest
     steps.push({
       step,
@@ -80,6 +86,7 @@ export interface FluidOptions {
   maxVw?: number;
   /** mobile-end compression: min base = minScale × base (default 0.875) */
   minScale?: number;
+  overrides?: StepOverrides;
 }
 
 export function buildFluidScale(base: number, ratio: number, opts: FluidOptions = {}): FluidStep[] {
@@ -87,8 +94,14 @@ export function buildFluidScale(base: number, ratio: number, opts: FluidOptions 
   const maxVw = opts.maxVw ?? FLUID_MAX_VW;
   const minScale = opts.minScale ?? 0.875;
   const minBase = Math.max(10, Math.round(base * minScale));
-  const min = buildScale(minBase, ratio);
-  const max = buildScale(base, ratio);
+  // An overridden step compresses on mobile like everything else.
+  const minOverrides =
+    opts.overrides &&
+    (Object.fromEntries(
+      Object.entries(opts.overrides).map(([k, v]) => [k, Math.round(v * minScale * 100) / 100])
+    ) as StepOverrides);
+  const min = buildScale(minBase, ratio, minOverrides);
+  const max = buildScale(base, ratio, opts.overrides);
   return max.map((s, i) => ({
     step: s.step,
     label: s.label,

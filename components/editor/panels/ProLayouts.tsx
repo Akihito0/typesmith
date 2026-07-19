@@ -13,7 +13,7 @@ import { readableInk } from "./MockupPanel";
 
 function useDesign() {
   const p = useProject();
-  const scale = useMemo(() => buildScale(p.base, p.ratio), [p.base, p.ratio]);
+  const scale = useMemo(() => buildScale(p.base, p.ratio, p.stepOverrides), [p.base, p.ratio, p.stepOverrides]);
   return {
     p,
     heading: fontById(p.headingFont),
@@ -281,6 +281,61 @@ export function SocialPanel() {
           <span>💬 128</span>
           <span>🔁 342</span>
           <span>❤️ 2.1k</span>
+        </div>
+      </div>
+
+      {/* 9:16 story */}
+      <div className="w-[240px] overflow-hidden rounded-xl border border-line shadow-panel">
+        <div
+          className="relative flex flex-col justify-between p-5"
+          style={{ background: p.background, color: ink, aspectRatio: "9 / 16" }}
+        >
+          {/* story progress bar + account row */}
+          <div>
+            <div className="flex gap-1">
+              <span className="h-0.5 flex-1 rounded-full" style={{ background: p.accent }} />
+              <span className="h-0.5 flex-1 rounded-full bg-current opacity-20" />
+              <span className="h-0.5 flex-1 rounded-full bg-current opacity-20" />
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <span
+                className="grid h-7 w-7 place-items-center rounded-full text-[10px] font-bold text-white"
+                style={{ background: p.accent }}
+              >
+                {initials(p.projectName)}
+              </span>
+              <span className="text-[11px] font-semibold" style={{ fontFamily: body.stack }}>
+                {p.projectName.toLowerCase().replace(/\s+/g, "")}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <p
+              className="text-[10px] font-semibold uppercase tracking-[0.16em]"
+              style={{ fontFamily: body.stack, color: p.accent }}
+            >
+              {p.subhead}
+            </p>
+            <h3
+              className="mt-2 text-[26px]"
+              style={{
+                fontFamily: heading.stack,
+                fontWeight: p.headingWeight,
+                lineHeight: p.headingLeading,
+                letterSpacing: `${p.headingTracking}em`,
+              }}
+            >
+              {p.previewText || "Modern Typography"}
+            </h3>
+          </div>
+
+          <span
+            className="self-center rounded-full px-5 py-2 text-[11px] font-medium text-white"
+            style={{ background: p.accent, fontFamily: body.stack }}
+          >
+            Swipe up -&gt;
+          </span>
         </div>
       </div>
     </div>

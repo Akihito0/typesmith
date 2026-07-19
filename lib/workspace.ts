@@ -25,6 +25,8 @@ interface WorkspaceStore {
   upsert: (id: string, state: ProjectState) => void;
   setActive: (id: string) => void;
   remove: (id: string) => void;
+  /** Merge backup entries in; on id collision the newer updatedAt wins. */
+  importAll: (entries: WorkspaceEntry[]) => void;
 }
 
 export function newProjectId(): string {
@@ -60,6 +62,20 @@ export const useWorkspace = create<WorkspaceStore>()(
 
       remove: (id) =>
         set((s) => ({ projects: s.projects.filter((p) => p.id !== id) })),
+
+      importAll: (entries) =>
+        set((s) => {
+          const byId = new Map(s.projects.map((p) => [p.id, p]));
+          for (const e of entries) {
+            if (!e || typeof e.id !== "string" || typeof e.state !== "object" || e.state === null) continue;
+            const existing = byId.get(e.id);
+            const updatedAt = typeof e.updatedAt === "number" ? e.updatedAt : Date.now();
+            if (!existing || updatedAt > existing.updatedAt) {
+              byId.set(e.id, { id: e.id, updatedAt, state: e.state });
+            }
+          }
+          return { projects: [...byId.values()] };
+        }),
     }),
     {
       name: "typesmith-workspace",

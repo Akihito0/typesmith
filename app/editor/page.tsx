@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useProject } from "@/lib/store";
 import { decodeState } from "@/lib/share";
@@ -25,6 +25,18 @@ function EditorInner() {
   const [tool, setTool] = useState<ToolId>("type-scale");
   const [exportOpen, setExportOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
+  const activeProjectId = useWorkspace((s) => s.activeId);
+
+  // The sheet-in reveal plays only on a real project change: the canvas key
+  // bumps when activeId moves from one project to another, never on the
+  // initial mount/rehydrate (which used to half-play the animation twice).
+  const prevProjectRef = useRef<string | null>(null);
+  const [canvasKey, setCanvasKey] = useState(0);
+  useEffect(() => {
+    const prev = prevProjectRef.current;
+    prevProjectRef.current = activeProjectId;
+    if (prev && activeProjectId && prev !== activeProjectId) setCanvasKey((k) => k + 1);
+  }, [activeProjectId]);
 
   // Shareable links: if a ?s= param is present, decode the full project state
   // into the store once on mount. Opening someone's link recreates their
@@ -98,14 +110,19 @@ function EditorInner() {
         {mode === "edit" && <Sidebar active={tool} onSelect={setTool} />}
 
         <main className="min-w-0 flex-1 overflow-hidden p-4 print-expand print:p-0">
-          {tool === "type-scale" && <TypeScalePanel />}
-          {tool === "style-guide" && <StyleGuidePanel />}
-          {tool === "colors" && <ContrastPanel onGetCode={() => setExportOpen(true)} />}
-          {tool === "website" && <WebsiteMockup />}
-          {tool === "mobile" && <MobileMockup />}
-          {tool === "slides" && <SlidesPanel />}
-          {tool === "social" && <SocialPanel />}
-          {tool === "newsletter" && <NewsletterPanel />}
+          {/* Keyed by project change: creating or switching a project
+              re-mounts the canvas with the sheet-in reveal. Tool switches and
+              the initial load stay instant. */}
+          <div key={canvasKey} className={canvasKey > 0 ? "h-full sheet-in" : "h-full"}>
+            {tool === "type-scale" && <TypeScalePanel />}
+            {tool === "style-guide" && <StyleGuidePanel />}
+            {tool === "colors" && <ContrastPanel onGetCode={() => setExportOpen(true)} />}
+            {tool === "website" && <WebsiteMockup />}
+            {tool === "mobile" && <MobileMockup />}
+            {tool === "slides" && <SlidesPanel />}
+            {tool === "social" && <SocialPanel />}
+            {tool === "newsletter" && <NewsletterPanel />}
+          </div>
         </main>
 
         {mode === "edit" && showMockupRail && <MockupControls />}

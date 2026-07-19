@@ -72,6 +72,72 @@ input[type="range"].ts-range::-moz-range-thumb {
   }
 }
 
+/* Project create/switch: the new canvas materializes — it resolves from a
+   soft blur while rising and settling into place, like a page coming into
+   focus. No wipes or covers (hard edges read mechanical); the blur→sharp
+   resolve carries the "fresh document" signal. Plays only when the active
+   project actually changes (not on page load or tool switches);
+   reduced-motion collapses it to an instant swap. */
+@keyframes sheet-in {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.988);
+    filter: blur(12px);
+  }
+  55% {
+    opacity: 1;
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+.sheet-in {
+  animation: sheet-in 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity, filter;
+}
+
+/* Hero showcase: per-beat progress hairline and the export scene's
+   line-by-line code type-on. (Frame swaps are opacity-only toggles on
+   stacked images — deliberately no entrance animation, so a "press" changes
+   the app in place.) */
+@keyframes showcase-progress-fill {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+.showcase-progress {
+  animation: showcase-progress-fill 5s linear both;
+}
+@keyframes code-line-in {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.code-line {
+  animation: code-line-in 0.3s ease-out both;
+}
+
+/* Simulated-session cursor: glides between controls in the screenshot and
+   "presses" with a soft scale dip — no ripple. Purely decorative
+   (aria-hidden, pointer-events none). */
+.demo-cursor {
+  transition:
+    left 0.8s cubic-bezier(0.45, 0, 0.15, 1),
+    top 0.8s cubic-bezier(0.45, 0, 0.15, 1),
+    transform 0.14s ease-out;
+}
+
 /* Slides present mode: the fullscreened stage centers the 16:9 frame. */
 .slides-stage:fullscreen {
   background: #000;
@@ -135,7 +201,9 @@ input[type="range"].ts-range::-moz-range-thumb {
 .marquee-track {
   display: flex;
   width: max-content;
-  animation: marquee-scroll 26s linear infinite;
+  /* 4 copies in the track: -50% spans two of them, so the duration is doubled
+     to keep the original scroll speed. */
+  animation: marquee-scroll 52s linear infinite;
 }
 
 /* Animated underline track for inline text links. */

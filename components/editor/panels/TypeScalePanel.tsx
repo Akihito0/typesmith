@@ -17,7 +17,7 @@ export function TypeScalePanel() {
   const [liveExport, setLiveExport] = useState(true);
   const [manualCss, setManualCss] = useState("");
 
-  const scale = useMemo(() => buildScale(p.base, p.ratio), [p.base, p.ratio]);
+  const scale = useMemo(() => buildScale(p.base, p.ratio, p.stepOverrides), [p.base, p.ratio, p.stepOverrides]);
   // Show the mid-range rows in the rail (like 12→96px in the mock).
   const railRows = scale.filter((s) => s.step >= -1);
 
@@ -27,7 +27,7 @@ export function TypeScalePanel() {
   const css = useMemo(
     () => generate(p, "css"),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.mutedColor, p.surfaceColor, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, p.headingWeight, p.bodyWeight]
+    [p.base, p.ratio, p.stepOverrides, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.mutedColor, p.surfaceColor, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, p.headingWeight, p.bodyWeight]
   );
 
   const isView = p.mode === "view";
@@ -37,6 +37,12 @@ export function TypeScalePanel() {
   // other row adjusts the ratio (px = base · ratio^step).
   const onRailDrag = (step: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const targetPx = Math.max(6, Number(e.target.value));
+    // A row that's been overridden keeps its independence: dragging it moves
+    // the override, not the whole scale.
+    if (p.stepOverrides[step] != null) {
+      p.setStepOverride(step, Math.round(targetPx * 100) / 100);
+      return;
+    }
     if (step === 0) {
       p.set("base", Math.round(Math.min(28, Math.max(10, targetPx))));
     } else {
@@ -98,12 +104,13 @@ export function TypeScalePanel() {
             {railRows.map((row) => (
               <div key={row.step}>
                 <div className="flex items-baseline justify-between">
-                  <span
-                    className="font-medium text-gray-200"
-                    style={{ fontSize: Math.min(row.px, 34) }}
-                  >
-                    {Math.round(row.px)}px
-                  </span>
+                  <StepSize
+                    px={row.px}
+                    overridden={p.stepOverrides[row.step] != null}
+                    readOnly={isView}
+                    onCommit={(px) => p.setStepOverride(row.step, px)}
+                    onReset={() => p.setStepOverride(row.step, null)}
+                  />
                   <span className="text-[10px] text-gray-500">{row.label}</span>
                 </div>
                 <input
@@ -309,6 +316,78 @@ export function TypeScalePanel() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Rail size label: click to type an exact px value, which becomes a per-step
+// override on top of the modular formula. Overridden rows show a ° mark and
+// a reset ("x") back to the formula.
+function StepSize({
+  px,
+  overridden,
+  readOnly,
+  onCommit,
+  onReset,
+}: {
+  px: number;
+  overridden: boolean;
+  readOnly: boolean;
+  onCommit: (px: number) => void;
+  onReset: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  const commit = () => {
+    setEditing(false);
+    const v = Number(draft);
+    if (Number.isFinite(v) && v >= 6 && v <= 400 && Math.round(v) !== Math.round(px)) {
+      onCommit(Math.round(v * 100) / 100);
+    }
+  };
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        type="number"
+        min={6}
+        max={400}
+        defaultValue={Math.round(px)}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") setEditing(false);
+        }}
+        className="h-8 w-20 rounded border border-brand-600 bg-canvas-panel px-2 text-sm text-white"
+        aria-label="Step size override in px"
+      />
+    );
+  }
+
+  return (
+    <span className="flex items-baseline gap-1.5">
+      <button
+        onClick={readOnly ? undefined : () => { setDraft(String(Math.round(px))); setEditing(true); }}
+        title={readOnly ? undefined : "Click to set an exact size (override)"}
+        className={`font-medium text-gray-200 ${readOnly ? "cursor-default" : "hover:text-white"}`}
+        style={{ fontSize: Math.min(px, 34) }}
+      >
+        {Math.round(px)}px
+        {overridden && <span className="ml-0.5 align-super text-[10px] text-brand-500">°</span>}
+      </button>
+      {overridden && !readOnly && (
+        <button
+          onClick={onReset}
+          title="Reset to the formula value"
+          aria-label="Reset override"
+          className="text-[11px] text-gray-500 hover:text-white"
+        >
+          ×
+        </button>
+      )}
+    </span>
   );
 }
 

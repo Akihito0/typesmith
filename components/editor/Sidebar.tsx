@@ -81,7 +81,10 @@ export function Sidebar({
   };
 
   // Creates a fresh project. Nothing is lost — the current one is saved to
-  // the workspace first — so no confirmation is needed.
+  // the workspace first — so no confirmation is needed. The canvas re-mounts
+  // with the sheet-in reveal (keyed by activeId) and the button confirms
+  // briefly with "Created ->".
+  const [justCreated, setJustCreated] = useState(false);
   const newAsset = () => {
     saveCurrent();
     const ws = useWorkspace.getState();
@@ -90,6 +93,68 @@ export function Sidebar({
     hydrate(DEFAULT_PROJECT);
     ws.upsert(id, DEFAULT_PROJECT);
     afterProjectChange();
+    setJustCreated(true);
+    setTimeout(() => setJustCreated(false), 1400);
+  };
+
+  const duplicateProject = (id: string) => {
+    saveCurrent();
+    const ws = useWorkspace.getState();
+    const entry = ws.projects.find((e) => e.id === id);
+    if (!entry) return;
+    const nid = newProjectId();
+    const copy = { ...entry.state, projectName: `${entry.state.projectName} Copy` };
+    ws.upsert(nid, copy);
+    ws.setActive(nid);
+    hydrate(copy);
+    setWsOpen(false);
+    afterProjectChange();
+  };
+
+  const renameProject = (id: string) => {
+    const ws = useWorkspace.getState();
+    const entry = ws.projects.find((e) => e.id === id);
+    if (!entry) return;
+    const current = id === activeId ? projectName : entry.state.projectName;
+    const name = window.prompt("Rename project:", current)?.trim();
+    if (!name || name === current) return;
+    const base = id === activeId ? pickProjectState(useProject.getState()) : entry.state;
+    ws.upsert(id, { ...base, projectName: name });
+    if (id === activeId) useProject.getState().set("projectName", name);
+  };
+
+  const importRef = useRef<HTMLInputElement>(null);
+
+  const exportBackup = () => {
+    saveCurrent();
+    const data = JSON.stringify(
+      { app: "typesmith", version: 1, projects: useWorkspace.getState().projects },
+      null,
+      2
+    );
+    const blob = new Blob([data], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "typesmith-workspace.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const importBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      const entries = Array.isArray(parsed) ? parsed : parsed?.projects;
+      if (!Array.isArray(entries) || entries.length === 0) throw new Error("empty");
+      // Fill any missing fields from defaults so old backups stay loadable.
+      useWorkspace.getState().importAll(
+        entries.map((en) => ({ ...en, state: { ...DEFAULT_PROJECT, ...en.state } }))
+      );
+    } catch {
+      window.alert("That file doesn't look like a TypeSmith workspace backup.");
+    }
   };
 
   const deleteProject = (id: string) => {
@@ -165,18 +230,55 @@ export function Sidebar({
                       })}
                     </span>
                   </button>
-                  <button
-                    onClick={() => deleteProject(entry.id)}
-                    aria-label={`Delete ${entry.state.projectName}`}
-                    title="Delete project"
-                    className="mr-1.5 hidden rounded p-1 text-muted hover:bg-white hover:text-fail group-hover:block"
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                      <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  </button>
+                  <span className="mr-1 hidden shrink-0 items-center gap-0.5 group-hover:flex">
+                    <button
+                      onClick={() => renameProject(entry.id)}
+                      aria-label={`Rename ${entry.state.projectName}`}
+                      title="Rename"
+                      className="rounded px-1 py-0.5 text-[11px] text-muted hover:bg-white hover:text-ink"
+                    >
+                      Aa
+                    </button>
+                    <button
+                      onClick={() => duplicateProject(entry.id)}
+                      aria-label={`Duplicate ${entry.state.projectName}`}
+                      title="Duplicate"
+                      className="rounded px-1 py-0.5 text-[11px] text-muted hover:bg-white hover:text-ink"
+                    >
+                      ++
+                    </button>
+                    <button
+                      onClick={() => deleteProject(entry.id)}
+                      aria-label={`Delete ${entry.state.projectName}`}
+                      title="Delete"
+                      className="rounded px-1 py-0.5 text-[11px] text-muted hover:bg-white hover:text-fail"
+                    >
+                      ×
+                    </button>
+                  </span>
                 </div>
               ))}
+
+            {/* backup */}
+            <div className="mt-1 flex items-center justify-between border-t border-line px-2.5 pb-0.5 pt-1.5 text-[11px]">
+              <button onClick={exportBackup} className="text-muted hover:text-ink hover:underline">
+                Export backup
+              </button>
+              <button
+                onClick={() => importRef.current?.click()}
+                className="text-muted hover:text-ink hover:underline"
+              >
+                Import -&gt;
+              </button>
+              <input
+                ref={importRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={importBackup}
+                className="hidden"
+                aria-label="Import workspace backup"
+              />
+            </div>
           </div>
         )}
       </div>
@@ -207,7 +309,9 @@ export function Sidebar({
       </nav>
 
       <div className="border-t border-line p-3">
-        <Button variant="dark" className="w-full h-8 text-xs" onClick={newAsset}>+ New Asset</Button>
+        <Button variant="dark" className="w-full h-8 text-xs" onClick={newAsset}>
+          {justCreated ? <span className="swap-in">Created -&gt;</span> : "+ New Asset"}
+        </Button>
         <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-muted">
           <a href={DOCS_URL} target="_blank" rel="noreferrer" className="hover:text-ink hover:underline">
             Docs
