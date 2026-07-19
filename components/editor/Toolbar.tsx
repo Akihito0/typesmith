@@ -416,12 +416,12 @@ function EditViewControl({
         <button
           type="button"
           onClick={() => {
-            const isLayout = VIEW_LAYOUTS.some((l) => l.id === activeTool);
+            const isLayout = LAYOUTS.some((l) => l.id === activeTool);
             if (mode === "view") {
               setViewOpen((o) => !o);
             } else {
               project.set("mode", "view");
-              if (!isLayout) onSelectTool(VIEW_LAYOUTS[0].id);
+              if (!isLayout) onSelectTool(LAYOUTS[0].id);
               setViewOpen(true);
             }
           }}
