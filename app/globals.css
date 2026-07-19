@@ -181,6 +181,127 @@ input[type="range"].ts-range::-moz-range-thumb {
 }
 
 /* ==========================================================================
+   Canvas panel theming (dark default, light via data-theme="light")
+   ========================================================================== */
+.ts-canvas {
+  --cv-bg: #171717;
+  --cv-panel: #1f1f1f;
+  --cv-border: #2b2b2b;
+  --cv-code: #0e0f13;
+  --cv-text: #ffffff;
+  --cv-text-secondary: #e5e7eb;
+  --cv-text-muted: #9ca3af;
+  --cv-text-faint: #6b7280;
+  --cv-body-text: #9ca3af;
+  --cv-slider-track: #3a3a3a;
+  --cv-input-bg: #1f1f1f;
+
+  background-color: var(--cv-bg);
+  color: var(--cv-text);
+  border-color: var(--cv-border);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.ts-canvas[data-theme="light"] {
+  --cv-bg: #ffffff;
+  --cv-panel: #f3f4f6;
+  --cv-border: #e5e7eb;
+  --cv-code: #f9fafb;
+  --cv-text: #111827;
+  --cv-text-secondary: #1f2937;
+  --cv-text-muted: #6b7280;
+  --cv-text-faint: #9ca3af;
+  --cv-body-text: #4b5563;
+  --cv-slider-track: #d1d5db;
+  --cv-input-bg: #f9fafb;
+}
+
+/* Title bar */
+.ts-canvas .ts-canvas-bar {
+  border-color: var(--cv-border);
+}
+
+/* Theme toggle button */
+.ts-canvas .ts-theme-toggle {
+  color: var(--cv-text-muted);
+}
+.ts-canvas .ts-theme-toggle:hover {
+  background-color: var(--cv-panel);
+  color: var(--cv-text);
+}
+
+/* Scale rail sidebar */
+.ts-canvas .ts-rail {
+  border-color: var(--cv-border);
+}
+
+/* Shared input overrides inside the canvas */
+.ts-canvas input[type="number"],
+.ts-canvas input[type="text"],
+.ts-canvas select {
+  background-color: var(--cv-input-bg) !important;
+  border-color: var(--cv-border) !important;
+  color: var(--cv-text) !important;
+}
+
+.ts-canvas input::placeholder {
+  color: var(--cv-text-faint) !important;
+}
+
+/* Range slider on the scale rail */
+.ts-canvas input[type="range"].ts-range {
+  background: var(--cv-slider-track);
+}
+
+/* Code snippet block */
+.ts-canvas pre {
+  background-color: var(--cv-code) !important;
+  border-color: var(--cv-border) !important;
+  color: var(--cv-text-muted) !important;
+}
+
+/* Section borders inside the canvas */
+.ts-canvas [class*="border-canvas-line"] {
+  border-color: var(--cv-border);
+}
+
+/* Override all hardcoded text colors within the canvas */
+.ts-canvas .text-white {
+  color: var(--cv-text);
+}
+.ts-canvas .text-gray-200 {
+  color: var(--cv-text-secondary);
+}
+.ts-canvas .text-gray-300 {
+  color: var(--cv-text-muted);
+}
+.ts-canvas .text-gray-400 {
+  color: var(--cv-body-text);
+}
+.ts-canvas .text-gray-500 {
+  color: var(--cv-text-faint);
+}
+
+/* Override canvas backgrounds */
+.ts-canvas .bg-canvas {
+  background-color: var(--cv-bg);
+}
+.ts-canvas .bg-canvas-panel {
+  background-color: var(--cv-panel);
+}
+.ts-canvas .bg-canvas-code {
+  background-color: var(--cv-code);
+}
+
+/* Override canvas borders */
+.ts-canvas .border-canvas-line {
+  border-color: var(--cv-border);
+}
+
+/* ==========================================================================
    Landing — "THE PROOF SHEET" specimen page.
    Masked line reveals, an infinite marquee, an underline track, and a
    scroll-triggered row reveal. All respect the prefers-reduced-motion rule
