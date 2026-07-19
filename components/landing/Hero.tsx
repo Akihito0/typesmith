@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { HeroShowcase } from "./HeroShowcase";
 
-// 01 — SPECIMEN. Symmetric composition: the staircased headline rails the
+// PREVIEW. Symmetric composition: the staircased headline rails the
 // left edge, the pitch + CTAs rail the right edge, and the showcase panel —
 // the working editor — sits centered between them as the hero's focal
 // object. Below lg everything stacks: headline, pitch/CTAs, panel.
@@ -34,8 +34,8 @@ export function Hero() {
 
   return (
     <section
-      id="specimen"
-      className="relative flex flex-1 items-center overflow-hidden bg-canvas py-8 text-white"
+      id="preview"
+      className="relative flex flex-1 scroll-mt-16 items-center overflow-hidden bg-canvas py-8 text-white"
     >
       <div className="mx-auto w-full max-w-[120rem] px-6 md:px-10">
         <div className="grid grid-cols-1 items-center gap-9 lg:grid-cols-[minmax(230px,320px)_1fr_minmax(230px,320px)] lg:gap-7 xl:gap-9">
@@ -111,7 +111,7 @@ export function Hero() {
                 </span>
               </Link>
               <a
-                href="#editions"
+                href="/#editions"
                 className="link-underline font-mono text-[12px] uppercase tracking-[0.15em] text-gray-400 hover:text-brand-100"
               >
                 View editions

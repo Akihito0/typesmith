@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 
+// Prefixed with "/" so the same nav works from the doc pages (/privacy, …):
+// on the landing page these resolve to same-document hash scrolls (animated by
+// SmoothScroll); from a subpage they route home and land on the section.
 const LINKS = [
-  { label: "Specimen", href: "#specimen" },
-  { label: "Instruments", href: "#instruments" },
-  { label: "Editions", href: "#editions" },
+  { label: "Preview", href: "/#preview" },
+  { label: "Features", href: "/#features" },
+  { label: "Editions", href: "/#editions" },
 ];
 
 // Deterministic dark nav: solid editor-canvas background at all times (no
@@ -16,7 +19,7 @@ export function Nav({ onLogin }: { onLogin: () => void }) {
   return (
     <header className="sticky top-0 z-30 border-b border-canvas-line bg-canvas">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 md:px-10">
-        <a href="#specimen" className="flex items-center gap-2 text-white">
+        <a href="/#preview" className="flex items-center gap-2 text-white">
           <span aria-hidden="true" className="h-[6px] w-[6px] bg-brand-500" />
           <span className="font-display text-xl font-semibold leading-none">TypeSmith</span>
         </a>

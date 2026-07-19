@@ -129,12 +129,14 @@ function ShowcasePanel({
   onPickTab,
   onResume,
   showProgress,
+  allVisible,
   overlay,
 }: {
   step: number;
   onPickTab?: (tab: number) => void;
   onResume?: () => void;
   showProgress?: boolean;
+  allVisible?: boolean;
   overlay?: ReactNode;
 }) {
   const frame = STORY[step];
@@ -169,7 +171,13 @@ function ShowcasePanel({
                 frame.tab === i ? "text-white" : "text-gray-500 hover:text-gray-300"
               }`}
             >
-              <span className={frame.tab === i ? "text-brand-500" : ""}>0{i + 1}</span> {label}
+              <span
+                aria-hidden="true"
+                className={`mr-1.5 ${frame.tab === i ? "text-brand-500" : "text-gray-600"}`}
+              >
+                &#9642;
+              </span>
+              {label}
             </button>
           ))}
         </div>
@@ -186,10 +194,18 @@ function ShowcasePanel({
         )}
       </div>
 
-      {/* the frames + demo cursor. All frames stay mounted and stacked; the
-          active one swaps with a hard cut — no crossfade, because two frames
-          mid-fade both go semi-transparent and the dark panel blinks through.
-          An instant cut is exactly what a real click repaint looks like. */}
+      {/* the frames + demo cursor. All frames stay mounted, stacked, and —
+          once loaded — at FULL opacity: the screenshots are opaque, so the
+          active frame simply rises via z-index and covers the rest. This is
+          what makes the hard cut flash-proof: an opacity-hidden image is
+          never painted, so browsers drop (or never build) its decoded
+          bitmap, and the first cut onto it can blank for a frame — the dark
+          panel strobing through on cold loads. A z-index swap of
+          always-painted layers is pure compositing; nothing to decode, no
+          flash. Until every frame has loaded, only the active frame is
+          visible so a half-downloaded neighbor never peeks from underneath.
+          No crossfade on cuts — an instant cut is exactly what a real click
+          repaint looks like. */}
       <div className="relative min-h-0 flex-1">
         {STORY.map((f, i) => (
           <Image
@@ -199,9 +215,13 @@ function ShowcasePanel({
             width={1440}
             height={900}
             priority={i === 0}
-            className={`h-auto w-full ${i === 0 ? "" : "absolute inset-0"} ${
-              i === step ? "opacity-100" : "opacity-0"
+            // Served as-is so the preloader's URLs (HeroShowcase) hit the
+            // same cache entries the browser paints from.
+            unoptimized
+            className={`h-auto w-full ${i === 0 ? "relative" : "absolute inset-0"} ${
+              i === step || allVisible ? "opacity-100" : "opacity-0"
             }`}
+            style={{ zIndex: i === step ? 1 : 0 }}
           />
         ))}
         {overlay}
@@ -213,8 +233,44 @@ function ShowcasePanel({
 export function HeroShowcase() {
   const [hovered, setHovered] = useState(false);
   const [manualTab, setManualTab] = useState<number | null>(null);
+  const [framesReady, setFramesReady] = useState(false);
 
-  const running = manualTab === null && !hovered;
+  // Preload every frame before the session starts. Until everything has
+  // arrived the panel just sits on frame 0 — no cursor, no progress — and
+  // the stacked frames stay hidden (ShowcasePanel's allVisible) so a
+  // half-downloaded neighbor never shows. Once ready, every frame is kept
+  // painted at full opacity and cuts are z-index-only (see ShowcasePanel),
+  // which is what actually makes the swap flash-proof.
+  useEffect(() => {
+    let alive = true;
+    Promise.all(
+      STORY.map(
+        (f) =>
+          new Promise<void>((resolve) => {
+            const img = new window.Image();
+            img.onload = () => {
+              if ("decode" in img) {
+                img
+                  .decode()
+                  .catch(() => {})
+                  .finally(resolve);
+              } else {
+                resolve();
+              }
+            };
+            img.onerror = () => resolve();
+            img.src = `${BASE}${f.src}`;
+          })
+      )
+    ).then(() => {
+      if (alive) setFramesReady(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const running = framesReady && manualTab === null && !hovered;
   const session = useSession(running);
 
   // A tab pick pauses the session on that panel; it resumes on its own after
@@ -255,6 +311,7 @@ export function HeroShowcase() {
       <ShowcasePanel
         step={displayStep}
         showProgress={running}
+        allVisible={framesReady}
         overlay={cursorOverlay}
         onPickTab={(tab) => {
           setManualTab(tab);

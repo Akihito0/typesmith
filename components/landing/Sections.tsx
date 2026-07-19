@@ -61,7 +61,7 @@ export function Marquee() {
 }
 
 // ============================================================================
-// 03 — INSTRUMENTS. Light section, the interactive centerpiece. No cards:
+// FEATURES. Light section, the interactive centerpiece. No cards:
 // four full-width editorial rows, each now a WORKING TOOL instead of a
 // static demo. The Scale tool's ratio is lifted here so the Mockups tool can
 // share it — local useState only, no store changes.
@@ -317,17 +317,7 @@ function MockupsDemo({ ratio }: { ratio: number }) {
   );
 }
 
-function InstrumentRow({
-  index,
-  title,
-  body,
-  demo,
-}: {
-  index: string;
-  title: string;
-  body: string;
-  demo: ReactNode;
-}) {
+function InstrumentRow({ title, body, demo }: { title: string; body: string; demo: ReactNode }) {
   const { ref, revealClass } = useInView<HTMLDivElement>();
   return (
     <div
@@ -336,28 +326,22 @@ function InstrumentRow({
     >
       <div className="grid grid-cols-1 items-start gap-8 md:grid-cols-[1fr_420px]">
         <div>
-          <span
-            className="reveal-item font-mono text-[10px] tracking-[0.15em] text-brand-600"
-            style={delay(0)}
-          >
-            {index}
-          </span>
           <h3
-            className="reveal-item mt-2 font-display font-medium text-ink"
-            style={{ fontSize: "clamp(2.25rem, 3.5vw, 3.25rem)", ...delay(1) }}
+            className="reveal-item font-display font-medium text-ink"
+            style={{ fontSize: "clamp(2.25rem, 3.5vw, 3.25rem)", ...delay(0) }}
           >
             {title}
           </h3>
           <p
             className="reveal-item mt-3 max-w-sm text-[13px] leading-relaxed text-muted"
-            style={delay(2)}
+            style={delay(1)}
           >
             {body}
           </p>
         </div>
         <div
           className="reveal-item chamfer-panel border border-line bg-surface p-6"
-          style={delay(3)}
+          style={delay(2)}
         >
           {demo}
         </div>
@@ -366,13 +350,12 @@ function InstrumentRow({
   );
 }
 
-export function Instruments() {
+export function Features() {
   const [ratioName, setRatioName] = useState(SCALE_CHIPS[1].name);
   const [ratioValue, setRatioValue] = useState(SCALE_CHIPS[1].value);
 
   const instruments = [
     {
-      index: "01",
       title: "Scale",
       body: "A base size and a ratio, expanded into a mathematically consistent hierarchy. Try a preset.",
       demo: (
@@ -387,19 +370,16 @@ export function Instruments() {
       ),
     },
     {
-      index: "02",
       title: "Pairing",
       body: "Heading and body voices proofed side by side before you commit. Shuffle to compare.",
       demo: <PairingDemo />,
     },
     {
-      index: "03",
       title: "Contrast",
       body: "Every text/surface pair graded against WCAG 2 and APCA as you pick colors.",
       demo: <ContrastDemo />,
     },
     {
-      index: "04",
       title: "Mockups",
       body: "See the scale set into real web and mobile layouts, live, using the ratio from Scale.",
       demo: <MockupsDemo ratio={ratioValue} />,
@@ -407,16 +387,15 @@ export function Instruments() {
   ];
 
   return (
-    <section id="instruments" className="mx-auto max-w-6xl px-6 md:px-10">
+    <section id="features" className="mx-auto max-w-6xl scroll-mt-16 px-6 md:px-10">
       <h2 className="flex flex-wrap items-center gap-3 border-t border-line py-6 font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
-        <span className="text-brand-600">02</span>
-        Instruments
+        Features
         <span className="h-px flex-1 bg-line" />
         <span className="text-brand-600">Interactive &mdash; try them</span>
       </h2>
       <div>
         {instruments.map((it) => (
-          <InstrumentRow key={it.index} {...it} />
+          <InstrumentRow key={it.title} {...it} />
         ))}
       </div>
     </section>
@@ -432,9 +411,8 @@ export function Instruments() {
 export function Doctrine() {
   const { ref, revealClass } = useInView<HTMLDivElement>(0.35);
   return (
-    <section id="doctrine" className="mx-auto max-w-6xl px-6 md:px-10">
+    <section id="doctrine" className="mx-auto max-w-6xl scroll-mt-16 px-6 md:px-10">
       <h2 className="flex items-center gap-3 border-t border-line py-6 font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
-        <span className="text-brand-600">03</span>
         Doctrine
         <span className="h-px flex-1 bg-line" />
       </h2>
@@ -491,9 +469,8 @@ const PRO_FEATURES = [
 export function Editions({ onStart }: { onStart: () => void }) {
   const { ref, revealClass } = useInView<HTMLDivElement>();
   return (
-    <section id="editions" className="mx-auto max-w-6xl px-6 md:px-10">
+    <section id="editions" className="mx-auto max-w-6xl scroll-mt-16 px-6 md:px-10">
       <h2 className="flex items-center gap-3 border-t border-line py-6 font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
-        <span className="text-brand-600">04</span>
         Editions
         <span className="h-px flex-1 bg-line" />
       </h2>
@@ -641,17 +618,17 @@ export function Colophon() {
             <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-gray-500">Index</p>
             <ul className="mt-3 space-y-2 font-mono text-[12px] text-gray-400">
               <li>
-                <a href="#specimen" className="link-underline hover:text-white">
-                  Specimen
+                <a href="/#preview" className="link-underline hover:text-white">
+                  Preview
                 </a>
               </li>
               <li>
-                <a href="#instruments" className="link-underline hover:text-white">
-                  Instruments
+                <a href="/#features" className="link-underline hover:text-white">
+                  Features
                 </a>
               </li>
               <li>
-                <a href="#editions" className="link-underline hover:text-white">
+                <a href="/#editions" className="link-underline hover:text-white">
                   Editions
                 </a>
               </li>
@@ -664,23 +641,28 @@ export function Colophon() {
             </p>
             <ul className="mt-3 space-y-2 font-mono text-[12px] text-gray-400">
               <li>
-                <a href="#" className="link-underline hover:text-white">
+                <Link href="/changelog" className="link-underline hover:text-white">
                   Changelog
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="link-underline hover:text-white">
+                <Link href="/privacy" className="link-underline hover:text-white">
                   Privacy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="link-underline hover:text-white">
+                <Link href="/terms" className="link-underline hover:text-white">
                   Terms
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="link-underline hover:text-white">
-                  GitHub
+                <a
+                  href="https://github.com/Akihito0/typesmith"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="link-underline hover:text-white"
+                >
+                  GitHub -&gt;
                 </a>
               </li>
             </ul>
