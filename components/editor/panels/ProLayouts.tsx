@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useProject } from "@/lib/store";
 import { fontById } from "@/lib/fonts";
 import { buildScale } from "@/lib/scale";
+import { generateEmailHtml } from "@/lib/emailExport";
 import { readableInk } from "./MockupPanel";
 
 // The three Pro-badged layouts (free during the beta). Like the Website and
@@ -42,12 +43,34 @@ function toBullets(body: string): string[] {
 }
 
 // ---- Slides -----------------------------------------------------------------
+const SLIDE_COUNT = 3;
+
 export function SlidesPanel() {
   const { p, heading, body, px, ink } = useDesign();
   const [slide, setSlide] = useState(0);
+  const stageRef = useRef<HTMLDivElement>(null);
+
+  // Arrow keys page the deck (also while presenting fullscreen).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      if (e.key === "ArrowRight") setSlide((s) => Math.min(SLIDE_COUNT - 1, s + 1));
+      if (e.key === "ArrowLeft") setSlide((s) => Math.max(0, s - 1));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const present = () => {
+    stageRef.current?.requestFullscreen?.().catch(() => {
+      // Fullscreen blocked (permissions/iframe) — the inline deck still works.
+    });
+  };
 
   const headingStyle = {
     fontFamily: heading.stack,
+    fontWeight: p.headingWeight,
     lineHeight: p.headingLeading,
     letterSpacing: `${p.headingTracking}em`,
   };
@@ -110,9 +133,9 @@ export function SlidesPanel() {
   return (
     <div className="flex h-full flex-col items-center gap-3 overflow-auto ts-scroll">
       {/* 16:9 slide frame; font-size on the frame drives the em-based type inside */}
-      <div className="flex w-full max-w-3xl flex-1 items-center">
+      <div ref={stageRef} className="slides-stage flex w-full max-w-3xl flex-1 items-center">
         <div
-          className="aspect-video w-full overflow-hidden rounded-lg border border-line shadow-panel"
+          className="slides-frame aspect-video w-full overflow-hidden rounded-lg border border-line shadow-panel"
           style={{ background: p.background, color: ink, fontSize: `clamp(10px, 2.2vw, ${px("Lead", 22)}px)` }}
         >
           {slides[slide]}
@@ -150,6 +173,13 @@ export function SlidesPanel() {
         <span className="text-[11px] text-muted">
           {slide + 1} / {slides.length}
         </span>
+        <button
+          onClick={present}
+          title="Present fullscreen (Esc to exit, arrow keys to navigate)"
+          className="ml-2 rounded-md bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-700"
+        >
+          Present
+        </button>
       </div>
     </div>
   );
@@ -186,9 +216,10 @@ export function SocialPanel() {
             {p.subhead}
           </p>
           <h3
-            className="mt-2 text-[30px] font-bold"
+            className="mt-2 text-[30px]"
             style={{
               fontFamily: heading.stack,
+              fontWeight: p.headingWeight,
               lineHeight: p.headingLeading,
               letterSpacing: `${p.headingTracking}em`,
             }}
@@ -228,9 +259,10 @@ export function SocialPanel() {
             style={{ background: p.background, color: ink }}
           >
             <h4
-              className="text-[22px] font-bold"
+              className="text-[22px]"
               style={{
                 fontFamily: heading.stack,
+                fontWeight: p.headingWeight,
                 lineHeight: p.headingLeading,
                 letterSpacing: `${p.headingTracking}em`,
               }}
@@ -259,8 +291,23 @@ export function SocialPanel() {
 export function NewsletterPanel() {
   const { p, heading, body, ink } = useDesign();
 
+  const downloadHtml = () => {
+    const blob = new Blob([generateEmailHtml(p)], { type: "text/html" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${p.projectName.toLowerCase().replace(/\s+/g, "-")}-newsletter.html`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   return (
-    <div className="flex h-full justify-center overflow-auto py-2 ts-scroll">
+    <div className="flex h-full flex-col items-center gap-3 overflow-auto py-2 ts-scroll">
+      <button
+        onClick={downloadHtml}
+        className="self-end rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface"
+      >
+        Download email HTML
+      </button>
       <div className="h-fit w-full max-w-xl overflow-hidden rounded-lg border border-line bg-white shadow-panel">
         {/* email client chrome */}
         <div className="border-b border-line bg-surface px-5 py-3">
@@ -280,9 +327,10 @@ export function NewsletterPanel() {
               {initials(p.projectName)}
             </span>
             <h2
-              className="mt-5 text-[26px] font-bold"
+              className="mt-5 text-[26px]"
               style={{
                 fontFamily: heading.stack,
+                fontWeight: p.headingWeight,
                 lineHeight: p.headingLeading,
                 letterSpacing: `${p.headingTracking}em`,
               }}

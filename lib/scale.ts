@@ -75,8 +75,18 @@ export interface FluidStep {
   clamp: string;
 }
 
-export function buildFluidScale(base: number, ratio: number): FluidStep[] {
-  const minBase = Math.max(12, Math.round(base * 0.875));
+export interface FluidOptions {
+  minVw?: number;
+  maxVw?: number;
+  /** mobile-end compression: min base = minScale × base (default 0.875) */
+  minScale?: number;
+}
+
+export function buildFluidScale(base: number, ratio: number, opts: FluidOptions = {}): FluidStep[] {
+  const minVw = opts.minVw ?? FLUID_MIN_VW;
+  const maxVw = opts.maxVw ?? FLUID_MAX_VW;
+  const minScale = opts.minScale ?? 0.875;
+  const minBase = Math.max(10, Math.round(base * minScale));
   const min = buildScale(minBase, ratio);
   const max = buildScale(base, ratio);
   return max.map((s, i) => ({
@@ -84,7 +94,7 @@ export function buildFluidScale(base: number, ratio: number): FluidStep[] {
     label: s.label,
     minPx: min[i].px,
     maxPx: s.px,
-    clamp: clampExpr(min[i].px, s.px),
+    clamp: clampExpr(min[i].px, s.px, minVw, maxVw),
   }));
 }
 

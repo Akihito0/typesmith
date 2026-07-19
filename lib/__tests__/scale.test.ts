@@ -75,4 +75,16 @@ describe("fluid scale", () => {
   it("degenerates to a plain rem value when min equals max", () => {
     expect(clampExpr(16, 16)).toBe("1rem");
   });
+
+  it("honors custom viewport bounds and mobile scale", () => {
+    const fluid = buildFluidScale(16, 1.25, { minVw: 400, maxVw: 1600, minScale: 0.75 });
+    const body = fluid.find((s) => s.step === 0)!;
+    expect(body.minPx).toBe(12); // 16 × 0.75
+    const m = body.clamp.match(/clamp\(.+?, ([\d.]+)vw ([+-]) ([\d.]+)rem, .+?\)/)!;
+    const slopeVw = Number(m[1]);
+    const intercept = (m[2] === "-" ? -1 : 1) * Number(m[3]) * 16;
+    const at = (vw: number) => (slopeVw / 100) * vw + intercept;
+    expect(at(400)).toBeCloseTo(12, 0);
+    expect(at(1600)).toBeCloseTo(16, 0);
+  });
 });

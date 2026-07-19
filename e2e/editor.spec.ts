@@ -115,9 +115,40 @@ test("upgrade to pro shows the honest beta modal", async ({ page }) => {
   await expect(page.getByText("nothing to buy", { exact: false })).toHaveCount(0);
 });
 
-test("new asset resets the project after confirmation", async ({ page }) => {
+test("new asset starts a fresh project and keeps the old one in the workspace", async ({ page }) => {
   await page.getByLabel("Project name").fill("Temp Name");
-  page.on("dialog", (d) => d.accept());
+  // The debounced workspace sync needs a beat before we create the new project.
+  await page.waitForTimeout(600);
   await page.getByRole("button", { name: "+ New Asset" }).click();
   await expect(page.getByLabel("Project name")).toHaveValue("TypeSmith Mobile");
+
+  // The previous project is preserved and switchable.
+  await page.getByRole("button", { name: "Switch project" }).click();
+  await page.getByText("Temp Name").click();
+  await expect(page.getByLabel("Project name")).toHaveValue("Temp Name");
+});
+
+test("contrast matrix grades every text/surface pair", async ({ page }) => {
+  await page.getByRole("button", { name: "Colors" }).click();
+  await expect(page.getByText("Contrast Matrix")).toBeVisible();
+  await expect(page.getByLabel("Muted hex value")).toHaveValue("#6b7280");
+});
+
+test("design tokens export uses the W3C format", async ({ page }) => {
+  await page.getByRole("button", { name: "Export" }).click();
+  await page.getByRole("button", { name: "Design Tokens" }).click();
+  await expect(page.getByText('"$type": "color"').first()).toBeVisible();
+});
+
+test("heading weight flows into the style guide", async ({ page }) => {
+  await page.getByLabel("Heading weight").selectOption("400");
+  await page.getByRole("button", { name: "Style Guide" }).click();
+  await expect(page.getByText("weights 400/400")).toBeVisible();
+});
+
+test("slides offer a present button and newsletter a html download", async ({ page }) => {
+  await page.getByRole("button", { name: "Slides" }).click();
+  await expect(page.getByRole("button", { name: "Present" })).toBeVisible();
+  await page.getByRole("button", { name: "Newsletter" }).click();
+  await expect(page.getByRole("button", { name: "Download email HTML" })).toBeVisible();
 });

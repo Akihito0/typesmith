@@ -27,7 +27,7 @@ export function TypeScalePanel() {
   const css = useMemo(
     () => generate(p, "css"),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking]
+    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.mutedColor, p.surfaceColor, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, p.headingWeight, p.bodyWeight]
   );
 
   const isView = p.mode === "view";
@@ -152,7 +152,7 @@ export function TypeScalePanel() {
             style={{
               fontFamily: heading.stack,
               fontSize: Math.min(scale[scale.length - 2].px, 84),
-              fontWeight: 700,
+              fontWeight: p.headingWeight,
               lineHeight: p.headingLeading,
               letterSpacing: `${p.headingTracking}em`,
             }}
@@ -162,7 +162,7 @@ export function TypeScalePanel() {
 
           <p
             className="mt-6 max-w-md text-gray-400"
-            style={{ fontFamily: body.stack, fontSize: p.base, lineHeight: p.bodyLeading }}
+            style={{ fontFamily: body.stack, fontSize: p.base, lineHeight: p.bodyLeading, fontWeight: p.bodyWeight }}
           >
             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
             tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
@@ -180,6 +180,7 @@ export function TypeScalePanel() {
                   style={{
                     fontFamily: heading.stack,
                     fontSize: Math.min(row.px, 56),
+                    fontWeight: p.headingWeight,
                     letterSpacing: `${p.headingTracking}em`,
                   }}
                 >

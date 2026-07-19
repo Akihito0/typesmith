@@ -88,6 +88,24 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
             display={bg}
             onChange={(v) => p.set("background", v)}
           />
+          <SwatchInput
+            label="Accent"
+            value={p.accent}
+            display={cvd === "none" ? p.accent : simulateCvd(p.accent, cvd)}
+            onChange={(v) => p.set("accent", v)}
+          />
+          <SwatchInput
+            label="Muted"
+            value={p.mutedColor}
+            display={cvd === "none" ? p.mutedColor : simulateCvd(p.mutedColor, cvd)}
+            onChange={(v) => p.set("mutedColor", v)}
+          />
+          <SwatchInput
+            label="Surface"
+            value={p.surfaceColor}
+            display={cvd === "none" ? p.surfaceColor : simulateCvd(p.surfaceColor, cvd)}
+            onChange={(v) => p.set("surfaceColor", v)}
+          />
         </div>
 
         {/* ratio bar */}
@@ -136,6 +154,46 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
               Secondary Action
             </span>
           </div>
+        </div>
+      </section>
+
+      {/* contrast matrix: every text color × every surface at a glance */}
+      <section className="rounded-card border border-line bg-white p-5 shadow-panel">
+        <p className="text-[13px] font-semibold text-ink">Contrast Matrix</p>
+        <p className="mt-0.5 text-[12px] text-muted">
+          Every text color against every surface, graded at normal-text thresholds.
+        </p>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[420px] text-left text-[12px]">
+            <thead>
+              <tr className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                <th className="py-1.5 pr-3 font-semibold">Text ↓ / Surface →</th>
+                <th className="py-1.5 pr-3 font-semibold">Background</th>
+                <th className="py-1.5 font-semibold">Surface</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(
+                [
+                  ["Foreground", p.foreground],
+                  ["Muted", p.mutedColor],
+                  ["Accent", p.accent],
+                ] as const
+              ).map(([rowLabel, textHex]) => (
+                <tr key={rowLabel} className="border-t border-line">
+                  <td className="py-2 pr-3">
+                    <span className="inline-flex items-center gap-2 text-ink">
+                      <i className="h-3 w-3 rounded-sm border border-line" style={{ background: textHex }} />
+                      {rowLabel}
+                    </span>
+                  </td>
+                  {[p.background, p.surfaceColor].map((surfaceHex, i) => (
+                    <MatrixCell key={i} fg={textHex} bg={surfaceHex} />
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -216,6 +274,25 @@ function SwatchInput({
         </div>
       </div>
     </div>
+  );
+}
+
+function MatrixCell({ fg, bg }: { fg: string; bg: string }) {
+  const r = evaluateContrast(fg, bg);
+  if (!r) return <td className="py-2 pr-3 text-muted">—</td>;
+  return (
+    <td className="py-2 pr-3">
+      <span className="inline-flex items-center gap-1.5">
+        <span
+          className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+            r.grade === "Fail" ? "bg-red-50 text-fail" : "bg-green-50 text-pass"
+          }`}
+        >
+          {r.grade === "Fail" ? "FAIL" : r.grade}
+        </span>
+        <span className="font-mono text-[11px] text-muted">{formatRatio(r.ratio)}</span>
+      </span>
+    </td>
   );
 }
 

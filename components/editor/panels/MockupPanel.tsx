@@ -111,7 +111,7 @@ export function WebsiteMockup() {
                 style={{
                   fontFamily: heading.stack,
                   fontSize: Math.min(px("H1", 48), width === "mobile" ? 34 : 56),
-                  fontWeight: 700,
+                  fontWeight: p.headingWeight,
                   lineHeight: p.headingLeading,
                   letterSpacing: `${p.headingTracking}em`,
                 }}
@@ -124,7 +124,7 @@ export function WebsiteMockup() {
               </h1>
               <p
                 className="mx-auto mt-5 max-w-md opacity-70"
-                style={{ fontFamily: body.stack, fontSize: p.base, lineHeight: p.bodyLeading }}
+                style={{ fontFamily: body.stack, fontSize: p.base, lineHeight: p.bodyLeading, fontWeight: p.bodyWeight }}
               >
                 {p.body}
               </p>
@@ -194,7 +194,7 @@ export function MobileMockup() {
               style={{
                 fontFamily: heading.stack,
                 fontSize: Math.min(px("H2", 30), 30),
-                fontWeight: 700,
+                fontWeight: p.headingWeight,
                 lineHeight: p.headingLeading,
                 letterSpacing: `${p.headingTracking}em`,
               }}
@@ -255,7 +255,7 @@ export function MockupControls() {
   const code = useMemo(
     () => generate(p, format, minify),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, format, minify]
+    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.mutedColor, p.surfaceColor, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, p.headingWeight, p.bodyWeight, p.fluidMinVw, p.fluidMaxVw, p.fluidMinScale, format, minify]
   );
 
   return (

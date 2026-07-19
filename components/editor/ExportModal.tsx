@@ -11,6 +11,7 @@ const EXTENSIONS: Record<ExportFormat, string> = {
   scss: "scss",
   tailwind: "js",
   json: "json",
+  tokens: "tokens.json",
 };
 
 export function ExportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -28,7 +29,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const code = useMemo(
     () => generate(p, format),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, format, open]
+    [p.base, p.ratio, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.mutedColor, p.surfaceColor, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, p.headingWeight, p.bodyWeight, p.fluidMinVw, p.fluidMaxVw, p.fluidMinScale, format, open]
   );
 
   if (!open) return null;
@@ -82,6 +83,48 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
             </button>
           ))}
         </div>
+
+        {format === "fluid" && (
+          <div className="mt-3 flex items-end gap-3 rounded-md bg-surface px-3 py-2.5">
+            <label className="block">
+              <span className="text-[10px] font-medium text-muted">Min viewport</span>
+              <input
+                type="number"
+                min={280}
+                max={800}
+                value={p.fluidMinVw}
+                onChange={(e) => p.set("fluidMinVw", Number(e.target.value) || 360)}
+                className="mt-0.5 h-7 w-20 rounded border border-line px-1.5 text-xs"
+                aria-label="Fluid minimum viewport in px"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[10px] font-medium text-muted">Max viewport</span>
+              <input
+                type="number"
+                min={800}
+                max={2400}
+                value={p.fluidMaxVw}
+                onChange={(e) => p.set("fluidMaxVw", Number(e.target.value) || 1280)}
+                className="mt-0.5 h-7 w-20 rounded border border-line px-1.5 text-xs"
+                aria-label="Fluid maximum viewport in px"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[10px] font-medium text-muted">Mobile scale</span>
+              <input
+                type="number"
+                step={0.025}
+                min={0.5}
+                max={1}
+                value={p.fluidMinScale}
+                onChange={(e) => p.set("fluidMinScale", Number(e.target.value) || 0.875)}
+                className="mt-0.5 h-7 w-20 rounded border border-line px-1.5 text-xs"
+                aria-label="Fluid mobile base scale factor"
+              />
+            </label>
+          </div>
+        )}
 
         <pre className="mt-3 max-h-72 overflow-auto rounded-md bg-canvas-code p-4 font-mono text-[11px] leading-relaxed text-gray-300 ts-scroll">
           {code}

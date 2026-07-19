@@ -25,10 +25,22 @@ export interface ProjectState {
   bodyLeading: number;
   headingTracking: number;
 
+  // Weights
+  headingWeight: number;
+  bodyWeight: number;
+
+  // Fluid (clamp) scale bounds: sizes interpolate between these viewports,
+  // with the mobile end compressed to minScale × base.
+  fluidMinVw: number;
+  fluidMaxVw: number;
+  fluidMinScale: number;
+
   // Color
   foreground: string; // hex
   background: string; // hex
   accent: string; // hex
+  mutedColor: string; // secondary text, hex
+  surfaceColor: string; // alternate surface, hex
 
   // Preview copy used by both mockups
   headline: string;
@@ -69,9 +81,18 @@ const DEFAULT: ProjectState = {
   bodyLeading: 1.6,
   headingTracking: -0.02,
 
+  headingWeight: 700,
+  bodyWeight: 400,
+
+  fluidMinVw: 360,
+  fluidMaxVw: 1280,
+  fluidMinScale: 0.875,
+
   foreground: "#2563eb",
   background: "#ffffff",
   accent: "#2563eb",
+  mutedColor: "#6b7280",
+  surfaceColor: "#f8f9fb",
 
   headline: "Engineering precision for modern typography.",
   subhead: "Architecting Digital Precision",
@@ -95,6 +116,12 @@ function snapshot(s: ProjectState): ProjectState {
     (out as Record<keyof ProjectState, unknown>)[k] = s[k];
   });
   return out as ProjectState;
+}
+
+/** Public snapshot of just the project fields (no history/actions) — used by
+ *  the workspace registry (lib/workspace.ts). */
+export function pickProjectState(s: ProjectState): ProjectState {
+  return snapshot(s);
 }
 
 type Store = ProjectState & ProjectHistory & ProjectActions;

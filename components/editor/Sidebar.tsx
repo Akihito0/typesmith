@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useProject } from "@/lib/store";
-import { Button } from "@/components/ui";
+import { useProject, pickProjectState, DEFAULT_PROJECT } from "@/lib/store";
+import { useWorkspace, newProjectId } from "@/lib/workspace";
+import { Button, Chevron } from "@/components/ui";
 import type { ToolId } from "./types";
 
 const DOCS_URL = "https://github.com/Akihito0/typesmith#readme";
@@ -33,27 +35,150 @@ export function Sidebar({
   onSelect: (t: ToolId) => void;
 }) {
   const router = useRouter();
-  const reset = useProject((s) => s.reset);
+  const hydrate = useProject((s) => s.hydrate);
+  const projectName = useProject((s) => s.projectName);
 
-  const newAsset = () => {
-    if (!window.confirm("Start a new project? Current settings will be replaced (undo is available).")) return;
-    reset();
+  const activeId = useWorkspace((s) => s.activeId);
+  const projects = useWorkspace((s) => s.projects);
+
+  const [wsOpen, setWsOpen] = useState(false);
+  const wsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!wsOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (wsRef.current && !wsRef.current.contains(e.target as Node)) setWsOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setWsOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [wsOpen]);
+
+  const saveCurrent = () => {
+    const ws = useWorkspace.getState();
+    if (ws.activeId) ws.upsert(ws.activeId, pickProjectState(useProject.getState()));
+  };
+
+  const afterProjectChange = () => {
     onSelect("type-scale");
     // Drop any ?s= share param so the fresh state isn't re-hydrated over.
     router.replace("/editor");
   };
 
+  const switchTo = (id: string) => {
+    setWsOpen(false);
+    if (id === activeId) return;
+    saveCurrent();
+    const entry = useWorkspace.getState().projects.find((e) => e.id === id);
+    if (!entry) return;
+    useWorkspace.getState().setActive(id);
+    hydrate(entry.state);
+    afterProjectChange();
+  };
+
+  // Creates a fresh project. Nothing is lost — the current one is saved to
+  // the workspace first — so no confirmation is needed.
+  const newAsset = () => {
+    saveCurrent();
+    const ws = useWorkspace.getState();
+    const id = newProjectId();
+    ws.setActive(id);
+    hydrate(DEFAULT_PROJECT);
+    ws.upsert(id, DEFAULT_PROJECT);
+    afterProjectChange();
+  };
+
+  const deleteProject = (id: string) => {
+    const ws = useWorkspace.getState();
+    const entry = ws.projects.find((e) => e.id === id);
+    const name = id === activeId ? projectName : entry?.state.projectName ?? "this project";
+    if (!window.confirm(`Delete “${name}”? This can't be undone.`)) return;
+    ws.remove(id);
+    if (id !== activeId) return;
+    const rest = useWorkspace.getState().projects;
+    if (rest.length > 0) {
+      ws.setActive(rest[0].id);
+      hydrate(rest[0].state);
+    } else {
+      const nid = newProjectId();
+      ws.setActive(nid);
+      hydrate(DEFAULT_PROJECT);
+      ws.upsert(nid, DEFAULT_PROJECT);
+    }
+    afterProjectChange();
+  };
+
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-r border-line bg-sidebar">
-      {/* workspace header */}
-      <div className="flex items-center gap-2.5 border-b border-line px-4 py-3.5">
-        <span className="grid h-8 w-8 place-items-center rounded-md bg-brand-600 text-xs font-bold text-white">
-          TS
-        </span>
-        <div className="leading-tight">
-          <p className="text-[13px] font-semibold text-ink">Project Workspace</p>
-          <p className="text-[11px] text-muted">TypeSmith Enterprise</p>
-        </div>
+    <aside className="flex w-56 shrink-0 flex-col border-r border-line bg-sidebar print:hidden">
+      {/* workspace switcher */}
+      <div ref={wsRef} className="relative border-b border-line">
+        <button
+          onClick={() => setWsOpen((o) => !o)}
+          aria-label="Switch project"
+          aria-expanded={wsOpen}
+          className="flex w-full items-center gap-2.5 px-4 py-3.5 text-left hover:bg-surface"
+        >
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand-600 text-xs font-bold text-white">
+            TS
+          </span>
+          <span className="min-w-0 flex-1 leading-tight">
+            <span className="block truncate text-[13px] font-semibold text-ink">{projectName}</span>
+            <span className="block text-[11px] text-muted">
+              {projects.length} project{projects.length === 1 ? "" : "s"}
+            </span>
+          </span>
+          <Chevron className="shrink-0 text-muted" />
+        </button>
+
+        {wsOpen && (
+          <div className="absolute left-2 right-2 top-full z-40 mt-1 rounded-lg border border-line bg-white p-1.5 shadow-modal">
+            {[...projects]
+              .sort((a, b) => b.updatedAt - a.updatedAt)
+              .map((entry) => (
+                <div
+                  key={entry.id}
+                  className={`group flex items-center rounded-md ${
+                    entry.id === activeId ? "bg-brand-50" : "hover:bg-surface"
+                  }`}
+                >
+                  <button
+                    onClick={() => switchTo(entry.id)}
+                    className="min-w-0 flex-1 px-2.5 py-1.5 text-left"
+                  >
+                    <span
+                      className={`block truncate text-[13px] ${
+                        entry.id === activeId ? "font-medium text-brand-700" : "text-ink"
+                      }`}
+                    >
+                      {entry.id === activeId ? projectName : entry.state.projectName}
+                    </span>
+                    <span className="block text-[10px] text-muted">
+                      {new Date(entry.updatedAt).toLocaleString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => deleteProject(entry.id)}
+                    aria-label={`Delete ${entry.state.projectName}`}
+                    title="Delete project"
+                    className="mr-1.5 hidden rounded p-1 text-muted hover:bg-white hover:text-fail group-hover:block"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                      <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+          </div>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto p-3 ts-scroll">

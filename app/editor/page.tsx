@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { useProject } from "@/lib/store";
 import { decodeState } from "@/lib/share";
 import { ensureGoogleFont, gfFamilyFromId } from "@/lib/googleFonts";
+import { pickProjectState } from "@/lib/store";
+import { useWorkspace } from "@/lib/workspace";
 import { Sidebar } from "@/components/editor/Sidebar";
 import { Toolbar } from "@/components/editor/Toolbar";
 import { ExportModal } from "@/components/editor/ExportModal";
@@ -34,6 +36,23 @@ function EditorInner() {
     const decoded = s ? decodeState(s) : null;
     if (decoded) hydrate(decoded);
     else useProject.persist.rehydrate();
+
+    // Workspace registry: restore it, make sure the current project is
+    // registered, then keep the active entry's snapshot in sync (debounced).
+    useWorkspace.persist.rehydrate();
+    useWorkspace.getState().init(pickProjectState(useProject.getState()));
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsub = useProject.subscribe(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const ws = useWorkspace.getState();
+        if (ws.activeId) ws.upsert(ws.activeId, pickProjectState(useProject.getState()));
+      }, 400);
+    });
+    return () => {
+      unsub();
+      clearTimeout(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -73,12 +92,12 @@ function EditorInner() {
   const showMockupRail = ["website", "mobile", "slides", "social", "newsletter"].includes(tool);
 
   return (
-    <div className="flex h-screen flex-col bg-surface">
+    <div className="flex h-screen flex-col bg-surface print-expand print:block print:bg-white">
       <Toolbar onExport={() => setExportOpen(true)} onUpgrade={() => setProOpen(true)} />
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 print-expand print:block">
         {mode === "edit" && <Sidebar active={tool} onSelect={setTool} />}
 
-        <main className="min-w-0 flex-1 overflow-hidden p-4">
+        <main className="min-w-0 flex-1 overflow-hidden p-4 print-expand print:p-0">
           {tool === "type-scale" && <TypeScalePanel />}
           {tool === "style-guide" && <StyleGuidePanel />}
           {tool === "colors" && <ContrastPanel onGetCode={() => setExportOpen(true)} />}

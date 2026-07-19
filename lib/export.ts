@@ -1,11 +1,11 @@
 // "Get Code" / export. Produces CSS variables, a Tailwind config fragment,
 // SCSS variables, and JSON design tokens from the current project state.
 
-import { buildScale, buildFluidScale, toUnit, FLUID_MIN_VW, FLUID_MAX_VW } from "./scale";
+import { buildScale, buildFluidScale, toUnit } from "./scale";
 import { fontById } from "./fonts";
 import type { ProjectState } from "./store";
 
-export type ExportFormat = "css" | "fluid" | "tailwind" | "scss" | "json";
+export type ExportFormat = "css" | "fluid" | "tailwind" | "scss" | "json" | "tokens";
 
 export const FORMAT_LABELS: Record<ExportFormat, string> = {
   css: "CSS Variables",
@@ -13,7 +13,18 @@ export const FORMAT_LABELS: Record<ExportFormat, string> = {
   tailwind: "Tailwind Config",
   scss: "SCSS Variables",
   json: "JSON Tokens",
+  tokens: "Design Tokens",
 };
+
+function colorEntries(state: ProjectState): [string, string][] {
+  return [
+    ["foreground", state.foreground],
+    ["background", state.background],
+    ["accent", state.accent],
+    ["muted", state.mutedColor],
+    ["surface", state.surfaceColor],
+  ];
+}
 
 function scaleTokens(state: ProjectState) {
   return buildScale(state.base, state.ratio).map((s) => ({
@@ -36,34 +47,38 @@ export function generate(state: ProjectState, format: ExportFormat, minify = fal
       `  --font-base: ${state.base}px;`,
       `  --ratio: ${state.ratio};`,
       ...steps.map((s) => `  --text-${s.key}: ${toUnit(s.px, state.unit)}; /* ${s.px}px */`),
+      `  --weight-heading: ${state.headingWeight};`,
+      `  --weight-body: ${state.bodyWeight};`,
       `  --leading-heading: ${state.headingLeading};`,
       `  --leading-body: ${state.bodyLeading};`,
       `  --tracking-heading: ${state.headingTracking}em;`,
-      `  --color-foreground: ${state.foreground};`,
-      `  --color-background: ${state.background};`,
-      `  --color-accent: ${state.accent};`,
+      ...colorEntries(state).map(([k, v]) => `  --color-${k}: ${v};`),
       "}",
     ];
     return minify ? lines.join("").replace(/\s*\/\*.*?\*\//g, "") : lines.join("\n");
   }
 
   if (format === "fluid") {
-    const fluid = buildFluidScale(state.base, state.ratio).map((s) => ({
+    const fluid = buildFluidScale(state.base, state.ratio, {
+      minVw: state.fluidMinVw,
+      maxVw: state.fluidMaxVw,
+      minScale: state.fluidMinScale,
+    }).map((s) => ({
       key: s.label.toLowerCase().replace(/\s+/g, "-"),
       ...s,
     }));
     const lines = [
-      `/* Fluid type scale — sizes interpolate between ${FLUID_MIN_VW}px and ${FLUID_MAX_VW}px viewports. */`,
+      `/* Fluid type scale — sizes interpolate between ${state.fluidMinVw}px and ${state.fluidMaxVw}px viewports. */`,
       ":root {",
       `  --font-heading: ${heading.stack};`,
       `  --font-body: ${body.stack};`,
       ...fluid.map((s) => `  --text-${s.key}: ${s.clamp}; /* ${s.minPx}px → ${s.maxPx}px */`),
+      `  --weight-heading: ${state.headingWeight};`,
+      `  --weight-body: ${state.bodyWeight};`,
       `  --leading-heading: ${state.headingLeading};`,
       `  --leading-body: ${state.bodyLeading};`,
       `  --tracking-heading: ${state.headingTracking}em;`,
-      `  --color-foreground: ${state.foreground};`,
-      `  --color-background: ${state.background};`,
-      `  --color-accent: ${state.accent};`,
+      ...colorEntries(state).map(([k, v]) => `  --color-${k}: ${v};`),
       "}",
     ];
     return minify ? lines.join("").replace(/\s*\/\*.*?\*\//g, "") : lines.join("\n");
@@ -76,12 +91,12 @@ export function generate(state: ProjectState, format: ExportFormat, minify = fal
       `$font-base: ${state.base}px;`,
       `$ratio: ${state.ratio};`,
       ...steps.map((s) => `$text-${s.key}: ${toUnit(s.px, state.unit)};`),
+      `$weight-heading: ${state.headingWeight};`,
+      `$weight-body: ${state.bodyWeight};`,
       `$leading-heading: ${state.headingLeading};`,
       `$leading-body: ${state.bodyLeading};`,
       `$tracking-heading: ${state.headingTracking}em;`,
-      `$color-foreground: ${state.foreground};`,
-      `$color-background: ${state.background};`,
-      `$color-accent: ${state.accent};`,
+      ...colorEntries(state).map(([k, v]) => `$color-${k}: ${v};`),
     ];
     return lines.join("\n");
   }
@@ -109,10 +124,12 @@ export function generate(state: ProjectState, format: ExportFormat, minify = fal
       "      letterSpacing: {",
       `        heading: "${state.headingTracking}em",`,
       "      },",
+      "      fontWeight: {",
+      `        heading: "${state.headingWeight}",`,
+      `        body: "${state.bodyWeight}",`,
+      "      },",
       "      colors: {",
-      `        foreground: "${state.foreground}",`,
-      `        background: "${state.background}",`,
-      `        accent: "${state.accent}",`,
+      ...colorEntries(state).map(([k, v]) => `        ${k}: "${v}",`),
       "      },",
       "    },",
       "  },",
@@ -120,24 +137,49 @@ export function generate(state: ProjectState, format: ExportFormat, minify = fal
     ].join("\n");
   }
 
-  // json
-  const tokens = {
-    project: state.projectName,
-    author: state.author,
-    typography: {
-      heading: heading.name,
-      body: body.name,
-      base: `${state.base}px`,
-      ratio: state.ratio,
-      scale: Object.fromEntries(steps.map((s) => [s.key, toUnit(s.px, state.unit)])),
-      leading: { heading: state.headingLeading, body: state.bodyLeading },
-      tracking: { heading: `${state.headingTracking}em` },
+  if (format === "json") {
+    const tokens = {
+      project: state.projectName,
+      author: state.author,
+      typography: {
+        heading: heading.name,
+        body: body.name,
+        base: `${state.base}px`,
+        ratio: state.ratio,
+        scale: Object.fromEntries(steps.map((s) => [s.key, toUnit(s.px, state.unit)])),
+        weight: { heading: state.headingWeight, body: state.bodyWeight },
+        leading: { heading: state.headingLeading, body: state.bodyLeading },
+        tracking: { heading: `${state.headingTracking}em` },
+      },
+      color: Object.fromEntries(colorEntries(state)),
+    };
+    return JSON.stringify(tokens, null, minify ? 0 : 2);
+  }
+
+  // W3C Design Tokens Community Group format — importable by Figma token
+  // plugins and Style Dictionary.
+  const w3c = {
+    color: Object.fromEntries(
+      colorEntries(state).map(([k, v]) => [k, { $type: "color", $value: v }])
+    ),
+    fontFamily: {
+      heading: { $type: "fontFamily", $value: heading.stack.split(",").map((s) => s.trim().replace(/^'|'$/g, "")) },
+      body: { $type: "fontFamily", $value: body.stack.split(",").map((s) => s.trim().replace(/^'|'$/g, "")) },
     },
-    color: {
-      foreground: state.foreground,
-      background: state.background,
-      accent: state.accent,
+    fontWeight: {
+      heading: { $type: "fontWeight", $value: state.headingWeight },
+      body: { $type: "fontWeight", $value: state.bodyWeight },
+    },
+    fontSize: Object.fromEntries(
+      steps.map((s) => [s.key, { $type: "dimension", $value: `${s.rem}rem` }])
+    ),
+    lineHeight: {
+      heading: { $type: "number", $value: state.headingLeading },
+      body: { $type: "number", $value: state.bodyLeading },
+    },
+    letterSpacing: {
+      heading: { $type: "dimension", $value: `${state.headingTracking}em` },
     },
   };
-  return JSON.stringify(tokens, null, minify ? 0 : 2);
+  return JSON.stringify(w3c, null, minify ? 0 : 2);
 }

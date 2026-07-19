@@ -48,7 +48,7 @@ export function Toolbar({ onExport, onUpgrade }: { onExport: () => void; onUpgra
   };
 
   return (
-    <div className="flex h-14 items-center gap-3 border-b border-line bg-white px-4">
+    <div className="flex h-14 items-center gap-3 border-b border-line bg-white px-4 print:hidden">
       <Segmented
         size="sm"
         options={[
@@ -130,6 +130,11 @@ export function Toolbar({ onExport, onUpgrade }: { onExport: () => void; onUpgra
           label="Heading font"
           className="w-36"
         />
+        <WeightSelect
+          value={project.headingWeight}
+          onChange={(w) => project.set("headingWeight", w)}
+          label="Heading weight"
+        />
         <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
           Body
         </span>
@@ -138,6 +143,11 @@ export function Toolbar({ onExport, onUpgrade }: { onExport: () => void; onUpgra
           onChange={(id) => project.set("bodyFont", id)}
           label="Body font"
           className="w-36"
+        />
+        <WeightSelect
+          value={project.bodyWeight}
+          onChange={(w) => project.set("bodyWeight", w)}
+          label="Body weight"
         />
       </div>
 
@@ -160,6 +170,31 @@ export function Toolbar({ onExport, onUpgrade }: { onExport: () => void; onUpgra
         <Button className="h-8 px-3 text-xs" onClick={onUpgrade}>Upgrade to Pro</Button>
       </div>
     </div>
+  );
+}
+
+const WEIGHTS = [300, 400, 500, 600, 700, 800];
+
+function WeightSelect({
+  value,
+  onChange,
+  label,
+}: {
+  value: number;
+  onChange: (w: number) => void;
+  label: string;
+}) {
+  return (
+    <Select
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="w-[74px]"
+      aria-label={label}
+    >
+      {WEIGHTS.map((w) => (
+        <option key={w} value={w}>{w}</option>
+      ))}
+    </Select>
   );
 }
 
@@ -230,26 +265,40 @@ function TypeMenu() {
 
       {open && (
         <div className="absolute left-0 top-10 z-40 w-72 space-y-3 rounded-lg border border-line bg-white p-3 shadow-modal">
-          <div>
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-              Heading font
-            </span>
-            <FontPicker
-              value={project.headingFont}
-              onChange={(id) => project.set("headingFont", id)}
-              label="Heading font"
-              className="mt-1"
+          <div className="flex items-end gap-2">
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                Heading font
+              </span>
+              <FontPicker
+                value={project.headingFont}
+                onChange={(id) => project.set("headingFont", id)}
+                label="Heading font"
+                className="mt-1"
+              />
+            </div>
+            <WeightSelect
+              value={project.headingWeight}
+              onChange={(w) => project.set("headingWeight", w)}
+              label="Heading weight"
             />
           </div>
-          <div>
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-              Body font
-            </span>
-            <FontPicker
-              value={project.bodyFont}
-              onChange={(id) => project.set("bodyFont", id)}
-              label="Body font"
-              className="mt-1"
+          <div className="flex items-end gap-2">
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                Body font
+              </span>
+              <FontPicker
+                value={project.bodyFont}
+                onChange={(id) => project.set("bodyFont", id)}
+                label="Body font"
+                className="mt-1"
+              />
+            </div>
+            <WeightSelect
+              value={project.bodyWeight}
+              onChange={(w) => project.set("bodyWeight", w)}
+              label="Body weight"
             />
           </div>
           <div className="flex items-center gap-1.5">

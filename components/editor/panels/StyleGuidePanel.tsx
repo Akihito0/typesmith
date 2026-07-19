@@ -19,14 +19,27 @@ export function StyleGuidePanel() {
   return (
     // h-full is load-bearing: the parent <main> is overflow-hidden, so without
     // a height this panel just gets clipped instead of scrolling.
-    <div className="mx-auto h-full max-w-3xl space-y-4 overflow-y-auto pb-2 ts-scroll">
+    <div className="mx-auto h-full max-w-3xl space-y-4 overflow-y-auto pb-2 ts-scroll print:h-auto print:overflow-visible">
       {/* header */}
       <section className="rounded-card border border-line bg-white p-6 shadow-panel">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Style Guide</p>
-        <h2 className="mt-1 text-2xl font-bold text-ink" style={{ fontFamily: heading.stack }}>
-          {p.projectName}
-        </h2>
-        <p className="mt-1 text-sm text-muted">by {p.author}</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Style Guide</p>
+            <h2
+              className="mt-1 text-2xl text-ink"
+              style={{ fontFamily: heading.stack, fontWeight: p.headingWeight }}
+            >
+              {p.projectName}
+            </h2>
+            <p className="mt-1 text-sm text-muted">by {p.author}</p>
+          </div>
+          <button
+            onClick={() => window.print()}
+            className="rounded-md border border-line px-2.5 py-1 text-[11px] font-medium text-ink hover:bg-surface print:hidden"
+          >
+            Download PDF
+          </button>
+        </div>
       </section>
 
       {/* typography */}
@@ -58,6 +71,7 @@ export function StyleGuidePanel() {
                 style={{
                   fontFamily: heading.stack,
                   fontSize: Math.min(s.px, 44),
+                  fontWeight: p.headingWeight,
                   letterSpacing: `${p.headingTracking}em`,
                 }}
               >
@@ -67,8 +81,8 @@ export function StyleGuidePanel() {
           ))}
         </div>
         <p className="mt-3 text-[11px] text-muted">
-          Base {p.base}px · ratio {p.ratio} · leading {p.headingLeading}/{p.bodyLeading} · tracking{" "}
-          {p.headingTracking}em
+          Base {p.base}px · ratio {p.ratio} · weights {p.headingWeight}/{p.bodyWeight} · leading{" "}
+          {p.headingLeading}/{p.bodyLeading} · tracking {p.headingTracking}em
         </p>
       </section>
 
@@ -81,6 +95,8 @@ export function StyleGuidePanel() {
               ["Foreground", p.foreground],
               ["Background", p.background],
               ["Accent", p.accent],
+              ["Muted", p.mutedColor],
+              ["Surface", p.surfaceColor],
             ] as const
           ).map(([label, hex]) => (
             <div key={label} className="overflow-hidden rounded-md border border-line">
