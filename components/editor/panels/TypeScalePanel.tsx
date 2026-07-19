@@ -76,7 +76,10 @@ export function TypeScalePanel() {
   };
 
   return (
-    <div data-theme={canvasDark ? "dark" : "light"} className="ts-canvas flex h-full flex-col overflow-hidden rounded-xl border">
+    <div
+      data-theme={canvasDark ? "dark" : "light"}
+      className="ts-canvas flex h-full flex-col overflow-hidden rounded-xl border"
+    >
       {/* canvas title bar */}
       <div className="ts-canvas-bar flex items-center justify-between border-b px-4 py-2.5">
         <span className="text-[13px] font-semibold tracking-wide">Type Scale Generator</span>
@@ -89,11 +92,22 @@ export function TypeScalePanel() {
           {canvasDark ? (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" />
-              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path
+                d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           ) : (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           )}
         </button>
@@ -102,7 +116,6 @@ export function TypeScalePanel() {
       <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[230px_1fr_240px]">
         {/* LEFT — scale rows */}
         <div className="overflow-y-auto border-b border-canvas-line p-4 lg:border-b-0 lg:border-r ts-scroll">
-
           {!isView && (
             <div className="mt-3 grid grid-cols-2 gap-2">
               <label className="block">
@@ -410,9 +423,9 @@ function StepSize({
           readOnly
             ? undefined
             : () => {
-              setDraft(String(Math.round(px)));
-              setEditing(true);
-            }
+                setDraft(String(Math.round(px)));
+                setEditing(true);
+              }
         }
         title={readOnly ? undefined : "Click to set an exact size (override)"}
         className={`font-medium text-gray-200 ${readOnly ? "cursor-default" : "hover:text-white"}`}
@@ -453,8 +466,9 @@ function CopySize({ value }: { value: string }) {
     <button
       onClick={copy}
       title={`Copy ${value}`}
-      className={`w-16 shrink-0 text-right font-mono text-[11px] ${copied ? "text-pass" : "text-gray-500 hover:text-white"
-        }`}
+      className={`w-16 shrink-0 text-right font-mono text-[11px] ${
+        copied ? "text-pass" : "text-gray-500 hover:text-white"
+      }`}
     >
       {copied ? "Copied" : value}
     </button>
