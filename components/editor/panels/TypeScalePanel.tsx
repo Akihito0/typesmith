@@ -84,7 +84,9 @@ export function TypeScalePanel() {
       <div className="ts-canvas-bar flex items-center justify-between border-b px-4 py-2.5">
         <span className="text-[13px] font-semibold tracking-wide">Type Scale Generator</span>
         <button
+          type="button"
           onClick={() => setCanvasDark((d) => !d)}
+          aria-pressed={canvasDark}
           aria-label={canvasDark ? "Switch to light mode" : "Switch to dark mode"}
           title={canvasDark ? "Switch to light mode" : "Switch to dark mode"}
           className="ts-theme-toggle grid h-7 w-7 place-items-center rounded-md transition-colors"
@@ -115,7 +117,7 @@ export function TypeScalePanel() {
 
       <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[230px_1fr_240px]">
         {/* LEFT — scale rows */}
-        <div className="overflow-y-auto border-b border-canvas-line p-4 lg:border-b-0 lg:border-r ts-scroll">
+        <div className="ts-rail overflow-y-auto border-b border-canvas-line p-4 lg:border-b-0 lg:border-r ts-scroll">
           {!isView && (
             <div className="mt-3 grid grid-cols-2 gap-2">
               <label className="block">
