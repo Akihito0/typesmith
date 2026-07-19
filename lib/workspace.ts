@@ -60,14 +60,14 @@ export const useWorkspace = create<WorkspaceStore>()(
 
       setActive: (id) => set({ activeId: id }),
 
-      remove: (id) =>
-        set((s) => ({ projects: s.projects.filter((p) => p.id !== id) })),
+      remove: (id) => set((s) => ({ projects: s.projects.filter((p) => p.id !== id) })),
 
       importAll: (entries) =>
         set((s) => {
           const byId = new Map(s.projects.map((p) => [p.id, p]));
           for (const e of entries) {
-            if (!e || typeof e.id !== "string" || typeof e.state !== "object" || e.state === null) continue;
+            if (!e || typeof e.id !== "string" || typeof e.state !== "object" || e.state === null)
+              continue;
             const existing = byId.get(e.id);
             const updatedAt = typeof e.updatedAt === "number" ? e.updatedAt : Date.now();
             if (!existing || updatedAt > existing.updatedAt) {

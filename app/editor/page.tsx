@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useProject } from "@/lib/store";
-import { decodeState } from "@/lib/share";
+import { decodeStateCompat } from "@/lib/share";
 import { ensureGoogleFont, gfFamilyFromId } from "@/lib/googleFonts";
 import { pickProjectState } from "@/lib/store";
 import { useWorkspace } from "@/lib/workspace";
@@ -12,7 +12,11 @@ import { Toolbar } from "@/components/editor/Toolbar";
 import { ExportModal } from "@/components/editor/ExportModal";
 import { ProModal } from "@/components/editor/ProModal";
 import { TypeScalePanel } from "@/components/editor/panels/TypeScalePanel";
-import { WebsiteMockup, MobileMockup, MockupControls } from "@/components/editor/panels/MockupPanel";
+import {
+  WebsiteMockup,
+  MobileMockup,
+  MockupControls,
+} from "@/components/editor/panels/MockupPanel";
 import { SlidesPanel, SocialPanel, NewsletterPanel } from "@/components/editor/panels/ProLayouts";
 import { ContrastPanel } from "@/components/editor/panels/ContrastPanel";
 import { StyleGuidePanel } from "@/components/editor/panels/StyleGuidePanel";
@@ -25,6 +29,7 @@ function EditorInner() {
   const [tool, setTool] = useState<ToolId>("type-scale");
   const [exportOpen, setExportOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const activeProjectId = useWorkspace((s) => s.activeId);
 
   // The sheet-in reveal plays only on a real project change: the canvas key
@@ -45,9 +50,15 @@ function EditorInner() {
   // always wins).
   useEffect(() => {
     const s = params.get("s");
-    const decoded = s ? decodeState(s) : null;
-    if (decoded) hydrate(decoded);
-    else useProject.persist.rehydrate();
+    if (s) {
+      // Async: the compressed format inflates via DecompressionStream.
+      decodeStateCompat(s).then((decoded) => {
+        if (decoded) hydrate(decoded);
+        else useProject.persist.rehydrate();
+      });
+    } else {
+      useProject.persist.rehydrate();
+    }
 
     // Workspace registry: restore it, make sure the current project is
     // registered, then keep the active entry's snapshot in sync (debounced).
@@ -105,9 +116,32 @@ function EditorInner() {
 
   return (
     <div className="flex h-screen flex-col bg-surface print-expand print:block print:bg-white">
-      <Toolbar onExport={() => setExportOpen(true)} onUpgrade={() => setProOpen(true)} />
+      <Toolbar
+        onExport={() => setExportOpen(true)}
+        onUpgrade={() => setProOpen(true)}
+        onMenu={mode === "edit" ? () => setDrawerOpen(true) : undefined}
+      />
       <div className="flex min-h-0 flex-1 print-expand print:block">
-        {mode === "edit" && <Sidebar active={tool} onSelect={setTool} />}
+        {/* Sidebar: inline on md+, a drawer below (hamburger in the toolbar) */}
+        {mode === "edit" && (
+          <div className="hidden md:flex">
+            <Sidebar active={tool} onSelect={setTool} />
+          </div>
+        )}
+        {mode === "edit" && drawerOpen && (
+          <div className="fixed inset-0 z-40 md:hidden">
+            <div className="absolute inset-0 bg-ink/50" onClick={() => setDrawerOpen(false)} />
+            <div className="absolute inset-y-0 left-0 flex shadow-modal">
+              <Sidebar
+                active={tool}
+                onSelect={(t) => {
+                  setTool(t);
+                  setDrawerOpen(false);
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         <main className="min-w-0 flex-1 overflow-hidden p-4 print-expand print:p-0">
           {/* Keyed by project change: creating or switching a project
@@ -136,7 +170,11 @@ function EditorInner() {
 export default function EditorPage() {
   // useSearchParams requires a Suspense boundary in the App Router.
   return (
-    <Suspense fallback={<div className="grid h-screen place-items-center text-sm text-muted">Loading editor…</div>}>
+    <Suspense
+      fallback={
+        <div className="grid h-screen place-items-center text-sm text-muted">Loading editor…</div>
+      }
+    >
       <EditorInner />
     </Suspense>
   );

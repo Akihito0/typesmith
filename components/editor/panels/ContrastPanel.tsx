@@ -2,7 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useProject } from "@/lib/store";
-import { evaluateContrast, formatRatio, simulateCvd, hexToRgb, apcaContrast, apcaGrade } from "@/lib/contrast";
+import {
+  evaluateContrast,
+  formatRatio,
+  simulateCvd,
+  hexToRgb,
+  apcaContrast,
+  apcaGrade,
+} from "@/lib/contrast";
 import { fontById } from "@/lib/fonts";
 import { Segmented } from "@/components/ui";
 
@@ -138,8 +145,16 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
           </span>
           {algo === "wcag" && result && (
             <span className="flex gap-5 text-[11px] font-medium">
-              <Badge ok={result.normalAA} label={`Normal text ${result.normalAAA ? "(AAA)" : "(AA)"}`} pass={result.normalAA} />
-              <Badge ok={result.largeAA} label={`Large text ${result.largeAAA ? "(AAA)" : "(AA)"}`} pass={result.largeAA} />
+              <Badge
+                ok={result.normalAA}
+                label={`Normal text ${result.normalAAA ? "(AAA)" : "(AA)"}`}
+                pass={result.normalAA}
+              />
+              <Badge
+                ok={result.largeAA}
+                label={`Large text ${result.largeAAA ? "(AAA)" : "(AA)"}`}
+                pass={result.largeAA}
+              />
             </span>
           )}
           {algo === "apca" && lc !== null && (
@@ -153,11 +168,11 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
         </div>
 
         {/* live preview in project copy + fonts */}
-        <div
-          className="mt-4 rounded-md border border-line p-6"
-          style={{ background: bg }}
-        >
-          <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: fg, opacity: 0.7 }}>
+        <div className="mt-4 rounded-md border border-line p-6" style={{ background: bg }}>
+          <p
+            className="text-[10px] font-semibold uppercase tracking-wide"
+            style={{ color: fg, opacity: 0.7 }}
+          >
             Preview
           </p>
           <h3
@@ -170,15 +185,21 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
             className="mt-2 max-w-lg text-sm leading-relaxed"
             style={{ color: fg, fontFamily: body.stack }}
           >
-            The quick brown fox jumps over the lazy dog. {p.projectName} provides an
-            integrated suite of tools for design-engineers to craft pixel-perfect
-            interfaces with technical rigor.
+            The quick brown fox jumps over the lazy dog. {p.projectName} provides an integrated
+            suite of tools for design-engineers to craft pixel-perfect interfaces with technical
+            rigor.
           </p>
           <div className="mt-4 flex gap-2.5" style={{ fontFamily: body.stack }}>
-            <span className="rounded-md px-4 py-2 text-xs font-medium" style={{ background: fg, color: bg }}>
+            <span
+              className="rounded-md px-4 py-2 text-xs font-medium"
+              style={{ background: fg, color: bg }}
+            >
               Primary Action
             </span>
-            <span className="rounded-md border px-4 py-2 text-xs font-medium" style={{ borderColor: fg, color: fg }}>
+            <span
+              className="rounded-md border px-4 py-2 text-xs font-medium"
+              style={{ borderColor: fg, color: fg }}
+            >
               Secondary Action
             </span>
           </div>
@@ -211,7 +232,10 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
                 <tr key={rowLabel} className="border-t border-line">
                   <td className="py-2 pr-3">
                     <span className="inline-flex items-center gap-2 text-ink">
-                      <i className="h-3 w-3 rounded-sm border border-line" style={{ background: textHex }} />
+                      <i
+                        className="h-3 w-3 rounded-sm border border-line"
+                        style={{ background: textHex }}
+                      />
                       {rowLabel}
                     </span>
                   </td>
@@ -298,7 +322,9 @@ function SwatchInput({
             aria-label={`${label} hex value`}
             spellCheck={false}
           />
-          <p className="text-[10px] text-muted">{label === "Foreground" ? "Text & UI color" : "Surface color"}</p>
+          <p className="text-[10px] text-muted">
+            {label === "Foreground" ? "Text & UI color" : "Surface color"}
+          </p>
         </div>
       </div>
     </div>

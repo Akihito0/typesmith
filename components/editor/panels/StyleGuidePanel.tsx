@@ -11,7 +11,10 @@ import { evaluateContrast, formatRatio } from "@/lib/contrast";
 // screen the Edit/View toggle is really for.
 export function StyleGuidePanel() {
   const p = useProject();
-  const scale = useMemo(() => buildScale(p.base, p.ratio, p.stepOverrides), [p.base, p.ratio, p.stepOverrides]);
+  const scale = useMemo(
+    () => buildScale(p.base, p.ratio, p.stepOverrides),
+    [p.base, p.ratio, p.stepOverrides]
+  );
   const heading = fontById(p.headingFont);
   const body = fontById(p.bodyFont);
   const contrast = evaluateContrast(p.foreground, p.background);
@@ -24,7 +27,9 @@ export function StyleGuidePanel() {
       <section className="rounded-card border border-line bg-white p-6 shadow-panel">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Style Guide</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+              Style Guide
+            </p>
             <h2
               className="mt-1 text-2xl text-ink"
               style={{ fontFamily: heading.stack, fontWeight: p.headingWeight }}
@@ -48,7 +53,10 @@ export function StyleGuidePanel() {
         <div className="mt-3 grid grid-cols-2 gap-4">
           <div className="rounded-md border border-line p-4">
             <p className="text-[10px] text-muted">Heading</p>
-            <p className="mt-1 text-xl font-semibold text-ink" style={{ fontFamily: heading.stack }}>
+            <p
+              className="mt-1 text-xl font-semibold text-ink"
+              style={{ fontFamily: heading.stack }}
+            >
               {heading.name}
             </p>
           </div>
@@ -112,7 +120,8 @@ export function StyleGuidePanel() {
           <p className="mt-3 text-[12px] text-muted">
             Foreground on background:{" "}
             <b className={contrast.grade === "Fail" ? "text-fail" : "text-pass"}>
-              {formatRatio(contrast.ratio)} · {contrast.grade === "Fail" ? "Fails AA" : `${contrast.grade} pass`}
+              {formatRatio(contrast.ratio)} ·{" "}
+              {contrast.grade === "Fail" ? "Fails AA" : `${contrast.grade} pass`}
             </b>
           </p>
         )}

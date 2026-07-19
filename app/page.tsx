@@ -15,9 +15,14 @@ export default function LandingPage() {
 
   return (
     <main className="min-h-screen bg-white">
-      <Nav onLogin={() => setAuthOpen(true)} />
-      <Hero />
-      <Marquee />
+      {/* First screen: nav + hero + marquee fill exactly one viewport — the
+          marquee rides the bottom edge and the light sections only appear on
+          scroll. */}
+      <div className="flex min-h-screen flex-col">
+        <Nav onLogin={() => setAuthOpen(true)} />
+        <Hero />
+        <Marquee />
+      </div>
       <Instruments />
       <Doctrine />
       <Editions onStart={() => setAuthOpen(true)} />

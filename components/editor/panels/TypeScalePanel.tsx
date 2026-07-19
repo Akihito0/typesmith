@@ -17,7 +17,10 @@ export function TypeScalePanel() {
   const [liveExport, setLiveExport] = useState(true);
   const [manualCss, setManualCss] = useState("");
 
-  const scale = useMemo(() => buildScale(p.base, p.ratio, p.stepOverrides), [p.base, p.ratio, p.stepOverrides]);
+  const scale = useMemo(
+    () => buildScale(p.base, p.ratio, p.stepOverrides),
+    [p.base, p.ratio, p.stepOverrides]
+  );
   // Show the mid-range rows in the rail (like 12→96px in the mock).
   const railRows = scale.filter((s) => s.step >= -1);
 
@@ -27,7 +30,26 @@ export function TypeScalePanel() {
   const css = useMemo(
     () => generate(p, "css"),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.base, p.ratio, p.stepOverrides, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.mutedColor, p.surfaceColor, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, p.headingWeight, p.bodyWeight]
+    [
+      p.base,
+      p.ratio,
+      p.stepOverrides,
+      p.headingFont,
+      p.bodyFont,
+      p.foreground,
+      p.background,
+      p.accent,
+      p.mutedColor,
+      p.surfaceColor,
+      p.projectName,
+      p.author,
+      p.unit,
+      p.headingLeading,
+      p.bodyLeading,
+      p.headingTracking,
+      p.headingWeight,
+      p.bodyWeight,
+    ]
   );
 
   const isView = p.mode === "view";
@@ -122,7 +144,9 @@ export function TypeScalePanel() {
                   value={Math.min(100, row.px)}
                   onChange={isView ? undefined : onRailDrag(row.step)}
                   disabled={isView}
-                  title={row.step === 0 ? "Drag to adjust the base size" : "Drag to adjust the ratio"}
+                  title={
+                    row.step === 0 ? "Drag to adjust the base size" : "Drag to adjust the ratio"
+                  }
                   aria-label={`${row.label} size ${Math.round(row.px)}px — drag to adjust ${row.step === 0 ? "base size" : "ratio"}`}
                 />
               </div>
@@ -169,12 +193,16 @@ export function TypeScalePanel() {
 
           <p
             className="mt-6 max-w-md text-gray-400"
-            style={{ fontFamily: body.stack, fontSize: p.base, lineHeight: p.bodyLeading, fontWeight: p.bodyWeight }}
+            style={{
+              fontFamily: body.stack,
+              fontSize: p.base,
+              lineHeight: p.bodyLeading,
+              fontWeight: p.bodyWeight,
+            }}
           >
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-            tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-            veniam, quis nostrud exercitation ullamco nisi ut aliquip ex ea commodo
-            consequat.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+            incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+            exercitation ullamco nisi ut aliquip ex ea commodo consequat.
           </p>
 
           {/* full ramp under the hero preview */}
@@ -369,7 +397,14 @@ function StepSize({
   return (
     <span className="flex items-baseline gap-1.5">
       <button
-        onClick={readOnly ? undefined : () => { setDraft(String(Math.round(px))); setEditing(true); }}
+        onClick={
+          readOnly
+            ? undefined
+            : () => {
+                setDraft(String(Math.round(px)));
+                setEditing(true);
+              }
+        }
         title={readOnly ? undefined : "Click to set an exact size (override)"}
         className={`font-medium text-gray-200 ${readOnly ? "cursor-default" : "hover:text-white"}`}
         style={{ fontSize: Math.min(px, 34) }}

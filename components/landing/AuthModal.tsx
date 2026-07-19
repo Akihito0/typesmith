@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Segmented } from "@/components/ui";
+import { useFocusTrap } from "@/components/ui/useFocusTrap";
 
 // Auth is intentionally optional — the proposal's core promise is "no signup
 // required." The modal exists for people who want to save work later, but
@@ -10,6 +11,8 @@ import { Button, Segmented } from "@/components/ui";
 export function AuthModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const [tab, setTab] = useState<"login" | "signup">("login");
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -38,6 +41,7 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
       aria-label="Sign in to TypeSmith"
     >
       <div
+        ref={dialogRef}
         className="relative w-full max-w-sm rounded-xl bg-white p-6 shadow-modal"
         onClick={(e) => e.stopPropagation()}
       >
@@ -47,7 +51,12 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
           className="absolute right-4 top-4 text-muted hover:text-ink"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path
+              d="M6 6l12 12M18 6L6 18"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
           </svg>
         </button>
 
@@ -70,7 +79,9 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
           }}
         >
           <label className="block">
-            <span className="text-[11px] font-medium uppercase tracking-wide text-muted">Email</span>
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted">
+              Email
+            </span>
             <input
               type="email"
               required
@@ -79,7 +90,9 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
             />
           </label>
           <label className="block">
-            <span className="text-[11px] font-medium uppercase tracking-wide text-muted">Password</span>
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted">
+              Password
+            </span>
             <input
               type="password"
               required
@@ -123,7 +136,10 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
 function GoogleG() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24">
-      <path fill="#fff" d="M12 11v3.6h5.05A4.34 4.34 0 0 1 7.6 12 4.4 4.4 0 0 1 12 7.6a4 4 0 0 1 2.83 1.1l2.6-2.6A8 8 0 1 0 20 12c0-.5-.05-1-.15-1H12z" />
+      <path
+        fill="#fff"
+        d="M12 11v3.6h5.05A4.34 4.34 0 0 1 7.6 12 4.4 4.4 0 0 1 12 7.6a4 4 0 0 1 2.83 1.1l2.6-2.6A8 8 0 1 0 20 12c0-.5-.05-1-.15-1H12z"
+      />
     </svg>
   );
 }

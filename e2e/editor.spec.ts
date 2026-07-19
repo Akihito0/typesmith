@@ -115,7 +115,9 @@ test("upgrade to pro shows the honest beta modal", async ({ page }) => {
   await expect(page.getByText("nothing to buy", { exact: false })).toHaveCount(0);
 });
 
-test("new asset starts a fresh project and keeps the old one in the workspace", async ({ page }) => {
+test("new asset starts a fresh project and keeps the old one in the workspace", async ({
+  page,
+}) => {
   await page.getByLabel("Project name").fill("Temp Name");
   // The debounced workspace sync needs a beat before we create the new project.
   await page.waitForTimeout(600);

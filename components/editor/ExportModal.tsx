@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useProject } from "@/lib/store";
 import { generate, FORMAT_LABELS, type ExportFormat } from "@/lib/export";
 import { Button } from "@/components/ui";
+import { useFocusTrap } from "@/components/ui/useFocusTrap";
 
 const EXTENSIONS: Record<ExportFormat, string> = {
   css: "css",
@@ -18,6 +19,8 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const p = useProject();
   const [format, setFormat] = useState<ExportFormat>("css");
   const [copied, setCopied] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -29,7 +32,31 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const code = useMemo(
     () => generate(p, format),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.base, p.ratio, p.stepOverrides, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.mutedColor, p.surfaceColor, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, p.headingWeight, p.bodyWeight, p.fluidMinVw, p.fluidMaxVw, p.fluidMinScale, format, open]
+    [
+      p.base,
+      p.ratio,
+      p.stepOverrides,
+      p.headingFont,
+      p.bodyFont,
+      p.foreground,
+      p.background,
+      p.accent,
+      p.mutedColor,
+      p.surfaceColor,
+      p.projectName,
+      p.author,
+      p.unit,
+      p.headingLeading,
+      p.bodyLeading,
+      p.headingTracking,
+      p.headingWeight,
+      p.bodyWeight,
+      p.fluidMinVw,
+      p.fluidMaxVw,
+      p.fluidMinScale,
+      format,
+      open,
+    ]
   );
 
   if (!open) return null;
@@ -58,6 +85,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
       aria-label="Export design tokens"
     >
       <div
+        ref={dialogRef}
         className="w-full max-w-lg rounded-xl bg-white p-5 shadow-modal"
         onClick={(e) => e.stopPropagation()}
       >
@@ -65,7 +93,12 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
           <h3 className="text-[15px] font-semibold text-ink">Export design tokens</h3>
           <button onClick={onClose} aria-label="Close" className="text-muted hover:text-ink">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path
+                d="M6 6l12 12M18 6L6 18"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>

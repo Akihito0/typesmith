@@ -164,8 +164,14 @@ export function generate(state: ProjectState, format: ExportFormat, minify = fal
       colorEntries(state).map(([k, v]) => [k, { $type: "color", $value: v }])
     ),
     fontFamily: {
-      heading: { $type: "fontFamily", $value: heading.stack.split(",").map((s) => s.trim().replace(/^'|'$/g, "")) },
-      body: { $type: "fontFamily", $value: body.stack.split(",").map((s) => s.trim().replace(/^'|'$/g, "")) },
+      heading: {
+        $type: "fontFamily",
+        $value: heading.stack.split(",").map((s) => s.trim().replace(/^'|'$/g, "")),
+      },
+      body: {
+        $type: "fontFamily",
+        $value: body.stack.split(",").map((s) => s.trim().replace(/^'|'$/g, "")),
+      },
     },
     fontWeight: {
       heading: { $type: "fontWeight", $value: state.headingWeight },

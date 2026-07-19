@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { encodeState, decodeState, buildShareUrl, DEFAULT_PROJECT } from "../share";
+import {
+  encodeState,
+  decodeState,
+  encodeStateCompact,
+  decodeStateCompat,
+  buildShareUrl,
+  DEFAULT_PROJECT,
+} from "../share";
 
 describe("share links", () => {
   it("round-trips the full project state", () => {
@@ -32,7 +39,23 @@ describe("share links", () => {
     expect(decodeState(packed)).toEqual({ projectName: "X" });
   });
 
-  it("builds an /editor?s= URL", () => {
-    expect(buildShareUrl(DEFAULT_PROJECT)).toMatch(/^\/editor\?s=.+/);
+  it("builds an /editor?s= URL", async () => {
+    expect(await buildShareUrl(DEFAULT_PROJECT)).toMatch(/^\/editor\?s=.+/);
+  });
+
+  it("compresses to a shorter param and round-trips", async () => {
+    const compact = await encodeStateCompact(DEFAULT_PROJECT);
+    expect(compact.startsWith("1.")).toBe(true);
+    expect(compact.length).toBeLessThan(encodeState(DEFAULT_PROJECT).length);
+    expect(await decodeStateCompat(compact)).toEqual(DEFAULT_PROJECT);
+  });
+
+  it("still decodes legacy uncompressed params", async () => {
+    const legacy = encodeState(DEFAULT_PROJECT);
+    expect(await decodeStateCompat(legacy)).toEqual(DEFAULT_PROJECT);
+  });
+
+  it("returns null for garbage compressed params", async () => {
+    expect(await decodeStateCompat("1.!!!!")).toBeNull();
   });
 });

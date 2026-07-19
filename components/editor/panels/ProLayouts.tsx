@@ -13,13 +13,15 @@ import { readableInk } from "./MockupPanel";
 
 function useDesign() {
   const p = useProject();
-  const scale = useMemo(() => buildScale(p.base, p.ratio, p.stepOverrides), [p.base, p.ratio, p.stepOverrides]);
+  const scale = useMemo(
+    () => buildScale(p.base, p.ratio, p.stepOverrides),
+    [p.base, p.ratio, p.stepOverrides]
+  );
   return {
     p,
     heading: fontById(p.headingFont),
     body: fontById(p.bodyFont),
-    px: (label: string, fallback: number) =>
-      scale.find((s) => s.label === label)?.px ?? fallback,
+    px: (label: string, fallback: number) => scale.find((s) => s.label === label)?.px ?? fallback,
     ink: readableInk(p.background),
   };
 }
@@ -97,7 +99,10 @@ export function SlidesPanel() {
       <h3 className="font-bold" style={{ ...headingStyle, fontSize: "1.7em" }}>
         {p.previewText || "Modern Typography"}
       </h3>
-      <ul className="mt-[4%] space-y-[3%]" style={{ fontFamily: body.stack, lineHeight: p.bodyLeading }}>
+      <ul
+        className="mt-[4%] space-y-[3%]"
+        style={{ fontFamily: body.stack, lineHeight: p.bodyLeading }}
+      >
         {toBullets(p.body).map((b, i) => (
           <li key={i} className="flex items-start gap-[1.2em] text-[0.95em]">
             <span
@@ -114,7 +119,10 @@ export function SlidesPanel() {
     </div>,
 
     // 3 — closing
-    <div key="closing" className="flex h-full flex-col items-center justify-center px-[10%] text-center">
+    <div
+      key="closing"
+      className="flex h-full flex-col items-center justify-center px-[10%] text-center"
+    >
       <h2 className="font-bold" style={{ ...headingStyle, fontSize: "2.2em" }}>
         {p.previewText || "Modern Typography"}
       </h2>
@@ -136,7 +144,11 @@ export function SlidesPanel() {
       <div ref={stageRef} className="slides-stage flex w-full max-w-3xl flex-1 items-center">
         <div
           className="slides-frame aspect-video w-full overflow-hidden rounded-lg border border-line shadow-panel"
-          style={{ background: p.background, color: ink, fontSize: `clamp(10px, 2.2vw, ${px("Lead", 22)}px)` }}
+          style={{
+            background: p.background,
+            color: ink,
+            fontSize: `clamp(10px, 2.2vw, ${px("Lead", 22)}px)`,
+          }}
         >
           {slides[slide]}
         </div>
@@ -228,8 +240,7 @@ export function SocialPanel() {
           </h3>
         </div>
         <div className="px-3.5 py-3 text-[12px] text-ink" style={{ lineHeight: 1.45 }}>
-          <b>{p.projectName}</b>{" "}
-          <span className="text-muted">{p.body.slice(0, 110)}…</span>
+          <b>{p.projectName}</b> <span className="text-muted">{p.body.slice(0, 110)}…</span>
         </div>
       </div>
 
@@ -249,7 +260,10 @@ export function SocialPanel() {
             </p>
           </div>
         </div>
-        <p className="mt-3 text-[14px] text-ink" style={{ fontFamily: body.stack, lineHeight: p.bodyLeading }}>
+        <p
+          className="mt-3 text-[14px] text-ink"
+          style={{ fontFamily: body.stack, lineHeight: p.bodyLeading }}
+        >
           {p.headline}
         </p>
         {/* link preview card */}
@@ -368,7 +382,8 @@ export function NewsletterPanel() {
         <div className="border-b border-line bg-surface px-5 py-3">
           <p className="text-[14px] font-semibold text-ink">{p.headline}</p>
           <p className="mt-0.5 text-[12px] text-muted">
-            {p.author} &lt;hello@{p.projectName.toLowerCase().replace(/\s+/g, "")}.io&gt; — {p.subhead}
+            {p.author} &lt;hello@{p.projectName.toLowerCase().replace(/\s+/g, "")}.io&gt; —{" "}
+            {p.subhead}
           </p>
         </div>
 

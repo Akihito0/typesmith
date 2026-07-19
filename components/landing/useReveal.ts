@@ -43,8 +43,7 @@ export function useInView<T extends HTMLElement>(threshold = 0.2) {
     return () => observer.disconnect();
   }, [threshold]);
 
-  const revealClass =
-    state === "in" ? "is-armed is-in" : state === "armed" ? "is-armed" : "";
+  const revealClass = state === "in" ? "is-armed is-in" : state === "armed" ? "is-armed" : "";
 
   return { ref, revealClass };
 }

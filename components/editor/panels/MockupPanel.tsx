@@ -15,14 +15,16 @@ import { Toggle } from "@/components/ui";
 
 function useDesign() {
   const p = useProject();
-  const scale = useMemo(() => buildScale(p.base, p.ratio, p.stepOverrides), [p.base, p.ratio, p.stepOverrides]);
+  const scale = useMemo(
+    () => buildScale(p.base, p.ratio, p.stepOverrides),
+    [p.base, p.ratio, p.stepOverrides]
+  );
   return {
     p,
     scale,
     heading: fontById(p.headingFont),
     body: fontById(p.bodyFont),
-    px: (label: string, fallback: number) =>
-      scale.find((s) => s.label === label)?.px ?? fallback,
+    px: (label: string, fallback: number) => scale.find((s) => s.label === label)?.px ?? fallback,
   };
 }
 
@@ -31,8 +33,7 @@ export function WebsiteMockup() {
   const { p, heading, body, px } = useDesign();
   const [width, setWidth] = useState<"desktop" | "tablet" | "mobile">("desktop");
 
-  const frameWidth =
-    width === "desktop" ? "100%" : width === "tablet" ? 640 : 390;
+  const frameWidth = width === "desktop" ? "100%" : width === "tablet" ? 640 : 390;
 
   // The headline highlights its second word with the accent color, matching
   // "Engineering *precision* for modern typography."
@@ -69,7 +70,15 @@ export function WebsiteMockup() {
             </span>
             <span className="mx-auto flex items-center gap-1.5 rounded bg-white px-3 py-1 text-[11px] text-muted">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="2" />
+                <rect
+                  x="5"
+                  y="10"
+                  width="14"
+                  height="10"
+                  rx="2"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                />
                 <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="2" />
               </svg>
               preview.typesmith.io/{p.projectName.toLowerCase().replace(/\s+/g, "-")}
@@ -87,11 +96,19 @@ export function WebsiteMockup() {
                 width === "mobile" ? "px-4" : "px-8"
               }`}
             >
-              <span className="flex items-center gap-2 text-sm font-semibold" style={{ fontFamily: heading.stack }}>
-                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: readableInk(p.background) }}>
+              <span
+                className="flex items-center gap-2 text-sm font-semibold"
+                style={{ fontFamily: heading.stack }}
+              >
+                <span
+                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
+                  style={{ background: readableInk(p.background) }}
+                >
                   V
                 </span>
-                <span className="whitespace-nowrap">{width === "mobile" ? "Vantage" : "Vantage Product"}</span>
+                <span className="whitespace-nowrap">
+                  {width === "mobile" ? "Vantage" : "Vantage Product"}
+                </span>
               </span>
               {width !== "mobile" && (
                 <span className="flex gap-6 text-xs opacity-70" style={{ fontFamily: body.stack }}>
@@ -133,15 +150,29 @@ export function WebsiteMockup() {
               </h1>
               <p
                 className="mx-auto mt-5 max-w-md opacity-70"
-                style={{ fontFamily: body.stack, fontSize: p.base, lineHeight: p.bodyLeading, fontWeight: p.bodyWeight }}
+                style={{
+                  fontFamily: body.stack,
+                  fontSize: p.base,
+                  lineHeight: p.bodyLeading,
+                  fontWeight: p.bodyWeight,
+                }}
               >
                 {p.body}
               </p>
-              <div className="mt-7 flex items-center justify-center gap-3" style={{ fontFamily: body.stack }}>
-                <span className="rounded-md px-4 py-2 text-sm font-medium text-white" style={{ background: p.accent }}>
+              <div
+                className="mt-7 flex items-center justify-center gap-3"
+                style={{ fontFamily: body.stack }}
+              >
+                <span
+                  className="rounded-md px-4 py-2 text-sm font-medium text-white"
+                  style={{ background: p.accent }}
+                >
                   Deploy Now
                 </span>
-                <span className="rounded-md border px-4 py-2 text-sm font-medium" style={{ borderColor: "currentColor", opacity: 0.75 }}>
+                <span
+                  className="rounded-md border px-4 py-2 text-sm font-medium"
+                  style={{ borderColor: "currentColor", opacity: 0.75 }}
+                >
                   Documentation
                 </span>
               </div>
@@ -155,8 +186,14 @@ export function WebsiteMockup() {
               style={{ borderColor: "rgba(127,127,127,0.2)" }}
             >
               {["Scale", "Contrast", "Export"].map((f) => (
-                <div key={f} className="rounded-md border p-3 text-center" style={{ borderColor: "rgba(127,127,127,0.2)" }}>
-                  <p className="text-xs font-semibold" style={{ fontFamily: heading.stack }}>{f}</p>
+                <div
+                  key={f}
+                  className="rounded-md border p-3 text-center"
+                  style={{ borderColor: "rgba(127,127,127,0.2)" }}
+                >
+                  <p className="text-xs font-semibold" style={{ fontFamily: heading.stack }}>
+                    {f}
+                  </p>
                   <p className="mt-1 text-[10px] opacity-60" style={{ fontFamily: body.stack }}>
                     Reads live from your system
                   </p>
@@ -175,83 +212,138 @@ export function MobileMockup() {
   const { p, heading, body, px } = useDesign();
 
   return (
-    <div className="flex h-full items-start justify-center overflow-auto py-4 ts-scroll">
-      {/* Phone shell — 375×812 is the iPhone X/11/12/13/14 logical size */}
-      <div className="relative w-[320px] shrink-0 overflow-hidden rounded-[40px] border-[6px] border-ink bg-black shadow-panel" style={{ height: 660 }}>
-        {/* Dynamic island / notch */}
-        <div className="absolute left-1/2 top-2 z-20 h-[22px] w-[90px] -translate-x-1/2 rounded-full bg-black" />
+    // Centered both ways — the phone is the panel's single object.
+    <div className="flex h-full items-center justify-center overflow-auto py-4 ts-scroll">
+      <div className="relative shrink-0">
+        {/* Hardware side buttons */}
+        <span
+          aria-hidden="true"
+          className="absolute -left-[3px] top-[120px] h-6 w-[3px] rounded-l-md bg-ink"
+        />
+        <span
+          aria-hidden="true"
+          className="absolute -left-[3px] top-[160px] h-10 w-[3px] rounded-l-md bg-ink"
+        />
+        <span
+          aria-hidden="true"
+          className="absolute -left-[3px] top-[206px] h-10 w-[3px] rounded-l-md bg-ink"
+        />
+        <span
+          aria-hidden="true"
+          className="absolute -right-[3px] top-[170px] h-14 w-[3px] rounded-r-md bg-ink"
+        />
 
-        {/* Scrollable inner content */}
-        <div className="h-full overflow-y-auto rounded-[34px] ts-scroll" style={{ background: p.background, color: readableInk(p.background) }}>
-          {/* status bar */}
-          <div className="flex items-center justify-between px-7 pb-1 pt-4 text-[10px] font-medium">
-            <span>9:41</span>
-            <span className="flex items-center gap-1">
-              <i className="block h-2 w-3 rounded-[2px] bg-current opacity-80" />
-              <i className="block h-2 w-4 rounded-[2px] border border-current" />
-            </span>
-          </div>
+        {/* Phone shell — 330×715 ≈ the iPhone 15 aspect (1:2.17) */}
+        <div
+          className="relative w-[330px] overflow-hidden rounded-[48px] border-[9px] border-ink bg-ink shadow-panel"
+          style={{ height: 715 }}
+        >
+          {/* Dynamic island */}
+          <div className="absolute left-1/2 top-2.5 z-20 h-[24px] w-[96px] -translate-x-1/2 rounded-full bg-ink" />
 
-          {/* header */}
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm font-semibold" style={{ fontFamily: heading.stack }}>
-              {p.projectName}
-            </span>
-            <span className="grid h-7 w-7 place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: p.accent }}>
-              {initials(p.author)}
-            </span>
-          </div>
-
-          {/* hero card */}
-          <div className="px-5 pb-4">
-            <h2
-              style={{
-                fontFamily: heading.stack,
-                fontSize: Math.min(px("H2", 30), 30),
-                fontWeight: p.headingWeight,
-                lineHeight: p.headingLeading,
-                letterSpacing: `${p.headingTracking}em`,
-              }}
-            >
-              {p.previewText || "Modern Typography"}
-            </h2>
-            <p className="mt-2 text-[12px] opacity-70" style={{ fontFamily: body.stack, lineHeight: p.bodyLeading }}>
-              {p.body}
-            </p>
-            <span
-              className="mt-3 inline-block rounded-md px-4 py-2 text-xs font-medium text-white"
-              style={{ background: p.accent, fontFamily: body.stack }}
-            >
-              Get Started
-            </span>
-          </div>
-
-          {/* cards */}
-          <div className="space-y-2.5 px-5 pb-5">
-            {["Type Scale", "Color Contrast", "Export Tokens"].map((c) => (
-              <div key={c} className="flex items-center justify-between rounded-lg border p-3" style={{ borderColor: "rgba(127,127,127,0.25)" }}>
-                <div>
-                  <p className="text-[12px] font-semibold" style={{ fontFamily: heading.stack }}>{c}</p>
-                  <p className="text-[10px] opacity-60" style={{ fontFamily: body.stack }}>Synced with project</p>
-                </div>
-                <span className="text-lg opacity-40">›</span>
+          {/* Screen */}
+          <div
+            className="h-full overflow-y-auto rounded-[39px] ts-scroll"
+            style={{ background: p.background, color: readableInk(p.background) }}
+          >
+            <div className="flex min-h-full flex-col">
+              {/* status bar */}
+              <div className="flex items-center justify-between px-7 pb-1 pt-4 text-[10px] font-medium">
+                <span>9:41</span>
+                <span className="flex items-center gap-1">
+                  <i className="block h-2 w-3 rounded-[2px] bg-current opacity-80" />
+                  <i className="block h-2 w-4 rounded-[2px] border border-current" />
+                </span>
               </div>
-            ))}
-          </div>
 
-          {/* bottom nav */}
-          <div className="flex items-center justify-around border-t py-3 text-[9px]" style={{ borderColor: "rgba(127,127,127,0.2)", fontFamily: body.stack }}>
-            {["Home", "Scale", "Colors", "Export"].map((t, i) => (
-              <span key={t} className="flex flex-col items-center gap-0.5" style={i === 0 ? { color: p.accent } : { opacity: 0.55 }}>
-                <i className="block h-4 w-4 rounded bg-current opacity-30" />
-                {t}
-              </span>
-            ))}
-          </div>
+              {/* header */}
+              <div className="flex items-center justify-between px-5 py-3">
+                <span className="text-sm font-semibold" style={{ fontFamily: heading.stack }}>
+                  {p.projectName}
+                </span>
+                <span
+                  className="grid h-7 w-7 place-items-center rounded-full text-[10px] font-bold text-white"
+                  style={{ background: p.accent }}
+                >
+                  {initials(p.author)}
+                </span>
+              </div>
 
-          {/* Home indicator bar */}
-          <div className="flex justify-center pb-2 pt-1">
-            <div className="h-[4px] w-[100px] rounded-full bg-current opacity-20" />
+              {/* hero card */}
+              <div className="px-5 pb-4">
+                <h2
+                  style={{
+                    fontFamily: heading.stack,
+                    fontSize: Math.min(px("H2", 30), 30),
+                    fontWeight: p.headingWeight,
+                    lineHeight: p.headingLeading,
+                    letterSpacing: `${p.headingTracking}em`,
+                  }}
+                >
+                  {p.previewText || "Modern Typography"}
+                </h2>
+                <p
+                  className="mt-2 text-[12px] opacity-70"
+                  style={{ fontFamily: body.stack, lineHeight: p.bodyLeading }}
+                >
+                  {p.body}
+                </p>
+                <span
+                  className="mt-3 inline-block rounded-md px-4 py-2 text-xs font-medium text-white"
+                  style={{ background: p.accent, fontFamily: body.stack }}
+                >
+                  Get Started
+                </span>
+              </div>
+
+              {/* cards */}
+              <div className="space-y-2.5 px-5 pb-5">
+                {["Type Scale", "Color Contrast", "Export Tokens"].map((c) => (
+                  <div
+                    key={c}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                    style={{ borderColor: "rgba(127,127,127,0.25)" }}
+                  >
+                    <div>
+                      <p
+                        className="text-[12px] font-semibold"
+                        style={{ fontFamily: heading.stack }}
+                      >
+                        {c}
+                      </p>
+                      <p className="text-[10px] opacity-60" style={{ fontFamily: body.stack }}>
+                        Synced with project
+                      </p>
+                    </div>
+                    <span className="text-lg opacity-40">›</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* bottom nav — pinned to the bottom of the screen */}
+              <div className="mt-auto">
+                <div
+                  className="flex items-center justify-around border-t py-3 text-[9px]"
+                  style={{ borderColor: "rgba(127,127,127,0.2)", fontFamily: body.stack }}
+                >
+                  {["Home", "Scale", "Colors", "Export"].map((t, i) => (
+                    <span
+                      key={t}
+                      className="flex flex-col items-center gap-0.5"
+                      style={i === 0 ? { color: p.accent } : { opacity: 0.55 }}
+                    >
+                      <i className="block h-4 w-4 rounded bg-current opacity-30" />
+                      {t}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Home indicator bar */}
+                <div className="flex justify-center pb-2 pt-1">
+                  <div className="h-[4px] w-[100px] rounded-full bg-current opacity-20" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -264,12 +356,37 @@ export function MockupControls() {
   const p = useProject();
   const [format, setFormat] = useState<ExportFormat>("tailwind");
   const [minify, setMinify] = useState(true);
+  const [copied, setCopied] = useState(false);
   const heading = fontById(p.headingFont);
 
   const code = useMemo(
     () => generate(p, format, minify),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.base, p.ratio, p.stepOverrides, p.headingFont, p.bodyFont, p.foreground, p.background, p.accent, p.mutedColor, p.surfaceColor, p.projectName, p.author, p.unit, p.headingLeading, p.bodyLeading, p.headingTracking, p.headingWeight, p.bodyWeight, p.fluidMinVw, p.fluidMaxVw, p.fluidMinScale, format, minify]
+    [
+      p.base,
+      p.ratio,
+      p.stepOverrides,
+      p.headingFont,
+      p.bodyFont,
+      p.foreground,
+      p.background,
+      p.accent,
+      p.mutedColor,
+      p.surfaceColor,
+      p.projectName,
+      p.author,
+      p.unit,
+      p.headingLeading,
+      p.bodyLeading,
+      p.headingTracking,
+      p.headingWeight,
+      p.bodyWeight,
+      p.fluidMinVw,
+      p.fluidMaxVw,
+      p.fluidMinScale,
+      format,
+      minify,
+    ]
   );
 
   return (
@@ -294,7 +411,9 @@ export function MockupControls() {
           aria-label="Output format"
         >
           {(Object.keys(FORMAT_LABELS) as ExportFormat[]).map((f) => (
-            <option key={f} value={f}>{FORMAT_LABELS[f]}</option>
+            <option key={f} value={f}>
+              {FORMAT_LABELS[f]}
+            </option>
           ))}
         </select>
       </div>
@@ -305,10 +424,14 @@ export function MockupControls() {
       </div>
 
       <button
-        onClick={() => navigator.clipboard?.writeText(code)}
+        onClick={async () => {
+          await navigator.clipboard?.writeText(code);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        }}
         className="rounded-md bg-brand-600 py-2 text-[13px] font-medium text-white hover:bg-brand-700"
       >
-        Generate {format === "css" ? "CSS" : FORMAT_LABELS[format]}
+        {copied ? "Copied ✓" : `Generate ${format === "css" ? "CSS" : FORMAT_LABELS[format]}`}
       </button>
 
       <div>

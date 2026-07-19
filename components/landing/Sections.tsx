@@ -9,7 +9,7 @@ import { evaluateContrast, formatRatio } from "@/lib/contrast";
 import { useCountUp, useInView } from "./useReveal";
 
 // Helper for the staggered reveal delay custom property.
-const delay = (i: number) => ({ "--i": i } as CSSProperties);
+const delay = (i: number) => ({ "--i": i }) as CSSProperties;
 
 // ============================================================================
 // 02 — MARQUEE STRIP. Full-bleed dark strip between the specimen and the
@@ -67,9 +67,7 @@ export function Marquee() {
 // share it — local useState only, no store changes.
 // ============================================================================
 const SCALE_CHIP_NAMES = ["Minor Third", "Major Third", "Golden Ratio"];
-const SCALE_CHIPS = SCALE_CHIP_NAMES.map(
-  (name) => RATIO_PRESETS.find((p) => p.name === name)!
-);
+const SCALE_CHIPS = SCALE_CHIP_NAMES.map((name) => RATIO_PRESETS.find((p) => p.name === name)!);
 
 function ScaleDemo({
   ratio,
@@ -154,7 +152,10 @@ function PairingDemo() {
         <p className="text-[26px] leading-tight text-ink" style={{ fontFamily: heading.stack }}>
           Modern Typography
         </p>
-        <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-muted" style={{ fontFamily: body.stack }}>
+        <p
+          className="mt-3 max-w-xs text-[13px] leading-relaxed text-muted"
+          style={{ fontFamily: body.stack }}
+        >
           The quick brown fox jumps over the lazy dog.
           <br />
           Proofed side by side before you commit.
@@ -335,7 +336,10 @@ function InstrumentRow({
     >
       <div className="grid grid-cols-1 items-start gap-8 md:grid-cols-[1fr_420px]">
         <div>
-          <span className="reveal-item font-mono text-[10px] tracking-[0.15em] text-brand-600" style={delay(0)}>
+          <span
+            className="reveal-item font-mono text-[10px] tracking-[0.15em] text-brand-600"
+            style={delay(0)}
+          >
             {index}
           </span>
           <h3
@@ -344,11 +348,17 @@ function InstrumentRow({
           >
             {title}
           </h3>
-          <p className="reveal-item mt-3 max-w-sm text-[13px] leading-relaxed text-muted" style={delay(2)}>
+          <p
+            className="reveal-item mt-3 max-w-sm text-[13px] leading-relaxed text-muted"
+            style={delay(2)}
+          >
             {body}
           </p>
         </div>
-        <div className="reveal-item chamfer-panel border border-line bg-surface p-6" style={delay(3)}>
+        <div
+          className="reveal-item chamfer-panel border border-line bg-surface p-6"
+          style={delay(3)}
+        >
           {demo}
         </div>
       </div>
@@ -446,9 +456,12 @@ export function Doctrine() {
             </span>
           </span>
         </p>
-        <p className="reveal-item mt-10 max-w-md text-[13px] leading-relaxed text-muted" style={delay(3)}>
-          Every size on this page is 16px &times; 1.25<sup>n</sup>. One base,
-          one ratio, no eyeballing &mdash; that is the whole doctrine.
+        <p
+          className="reveal-item mt-10 max-w-md text-[13px] leading-relaxed text-muted"
+          style={delay(3)}
+        >
+          Every size on this page is 16px &times; 1.25<sup>n</sup>. One base, one ratio, no
+          eyeballing &mdash; that is the whole doctrine.
         </p>
       </div>
     </section>
@@ -485,12 +498,16 @@ export function Editions({ onStart }: { onStart: () => void }) {
         <span className="h-px flex-1 bg-line" />
       </h2>
 
-      <div ref={ref} className={`reveal-row grid grid-cols-1 border-t border-line md:grid-cols-2 ${revealClass}`}>
+      <div
+        ref={ref}
+        className={`reveal-row grid grid-cols-1 border-t border-line md:grid-cols-2 ${revealClass}`}
+      >
         {/* Community */}
-        <div className="reveal-item flex flex-col border-b border-line py-10 md:border-b-0 md:border-r md:border-line md:pr-10" style={delay(0)}>
-          <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
-            Community
-          </p>
+        <div
+          className="reveal-item flex flex-col border-b border-line py-10 md:border-b-0 md:border-r md:border-line md:pr-10"
+          style={delay(0)}
+        >
+          <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted">Community</p>
           <p className="mt-4 font-display text-6xl font-semibold text-ink">Free</p>
           <ul className="mt-8 space-y-2.5">
             {COMMUNITY_FEATURES.map((f) => (
@@ -519,8 +536,7 @@ export function Editions({ onStart }: { onStart: () => void }) {
             Professional
           </p>
           <p className="mt-4 font-display text-6xl font-semibold text-ink">
-            Free{" "}
-            <span className="font-mono text-sm font-normal text-muted">while in beta</span>
+            Free <span className="font-mono text-sm font-normal text-muted">while in beta</span>
           </p>
           <ul className="mt-8 space-y-2.5">
             {PRO_FEATURES.map((f) => (
@@ -576,7 +592,9 @@ function StatCell({
       <p className="font-display text-5xl font-medium tabular-nums text-white">
         {String(shown).padStart(2, "0")}
       </p>
-      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.15em] text-gray-500">{label}</p>
+      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.15em] text-gray-500">
+        {label}
+      </p>
     </div>
   );
 }
@@ -587,7 +605,10 @@ export function Colophon() {
   const counting = revealClass.includes("is-in");
 
   return (
-    <footer id="docs" className="relative mt-6 overflow-hidden border-t border-canvas-line bg-canvas text-white">
+    <footer
+      id="docs"
+      className="relative mt-6 overflow-hidden border-t border-canvas-line bg-canvas text-white"
+    >
       <div className="relative mx-auto max-w-6xl px-6 pt-16 md:px-10">
         <div ref={ref} className={`reveal-lines ${revealClass}`}>
           <h2 className="font-display text-4xl font-medium text-white md:text-5xl">

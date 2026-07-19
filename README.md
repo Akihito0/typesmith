@@ -1,8 +1,38 @@
 # TypeSmith
 
-Precision typography and UI design, in one tool. Type scales, font pairing,
-WCAG contrast, and live Website/Mobile mockups — all reading from one shared
-project state, shareable as a single URL. No signup, no database.
+[![CI](https://github.com/Akihito0/typesmith/actions/workflows/ci.yml/badge.svg)](https://github.com/Akihito0/typesmith/actions/workflows/ci.yml)
+[![Deploy](https://github.com/Akihito0/typesmith/actions/workflows/deploy.yml/badge.svg)](https://github.com/Akihito0/typesmith/actions/workflows/deploy.yml)
+
+Precision typography and UI design, in one tool. Build a modular type scale,
+pair typefaces, prove accessibility, and watch the whole system render into
+live mockups — all in the browser, with no signup and no server. The entire
+project travels as a single shareable URL.
+
+![The TypeSmith editor](public/shots/06-website.png)
+
+## Features
+
+- **Type scale generator** — base size × ratio with 8 named presets, per-step
+  overrides (click a size in the rail to pin it), draggable rail sliders,
+  custom preview text, and font weight / leading / tracking controls.
+- **Font pairing** — curated faces plus ~100 Google Fonts loaded on demand,
+  searchable picker with in-face previews, session font upload
+  (.woff/.woff2/.ttf/.otf), and one-click pairing presets with shuffle.
+- **Accessibility proofing** — WCAG 2.1 and APCA (WCAG 3 draft) contrast, a
+  matrix grading every text/surface pair, color-blindness simulation, and an
+  auto-fixer that nudges a failing foreground to the nearest AA pass.
+- **Live layouts** — website, mobile app, slide deck (with fullscreen present
+  mode), social artboards (post, link card, 9:16 story), and an email
+  newsletter with email-safe HTML download.
+- **Style guide** — a client-facing summary of the whole system with
+  print-to-PDF export.
+- **Get code** — CSS variables, fluid `clamp()` CSS with configurable
+  viewport bounds, Tailwind config, SCSS, JSON, and W3C Design Tokens.
+- **Multi-project workspace** — autosave to localStorage, project switcher
+  with duplicate/rename/delete, JSON backup export/import, undo/redo with
+  coalesced history.
+- **Shareable links** — the full project compresses into a `?s=` URL param
+  (native deflate); opening a link recreates the project exactly.
 
 ## Run it
 
@@ -11,45 +41,48 @@ npm install
 npm run dev      # http://localhost:3000
 ```
 
-`npm run build && npm start` for production. Deploys as-is to Vercel /
-Netlify / Cloudflare Pages (all static + client-side, no env vars needed).
+`npm run build && npm start` for production. Fully static and client-side —
+deploys as-is to Vercel, Netlify, Cloudflare Pages, or GitHub Pages (the
+included deploy workflow publishes to Pages on every push to main; enable it
+once under Settings → Pages → Source: GitHub Actions).
 
-## Screens (mapped to the Figma file)
+## Scripts
 
-| Figma frame                        | Route / location                                    |
-| ---------------------------------- | --------------------------------------------------- |
-| TypeSmith Landing Page              | `/` — `app/page.tsx` + `components/landing/*`        |
-| Login/Signup Modal Overlay          | `components/landing/AuthModal.tsx` (Login button)    |
-| Editor — Type Scale Generator       | `/editor` → sidebar **Type Scale** (default view)    |
-| Editor Dashboard (Website mockup)   | `/editor` → sidebar **Website** / **Mobile App**     |
-| Editor — Color Contrast Tool        | `/editor` → sidebar **Colors**                       |
-| (bonus) Style Guide                 | `/editor` → sidebar **Style Guide**                  |
+| Script                  | What it does                                    |
+| ----------------------- | ----------------------------------------------- |
+| `npm run dev`           | Dev server on :3000                             |
+| `npm run build`         | Production build                                |
+| `npm run lint`          | ESLint (next/core-web-vitals)                   |
+| `npm run format:check`  | Prettier check (`format` to write)              |
+| `npm run typecheck`     | `tsc --noEmit`                                  |
+| `npm test`              | Vitest unit tests over `lib/`                   |
+| `npm run test:coverage` | Unit tests + coverage thresholds                |
+| `npm run test:e2e`      | Playwright suite (build first; serves on :3100) |
 
-## How it maps to the proposal
+Tip: to build while a dev server is running, use an isolated build dir:
+`NEXT_DIST_DIR=.next-ci npm run build` — both writing `.next/` at once
+corrupts it.
 
-- **One shared workspace** — `lib/store.ts` (zustand). Every panel reads/writes
-  the same `ProjectState`; changing the ratio updates the scale rail, both
-  mockups, the style guide, and every export at once.
-- **Type scale generator** — `lib/scale.ts`. `size = base × ratio^step`,
-  8 ratio presets + custom, px/rem/em output.
-- **Custom preview text** — one input in the Type Scale panel live-updates the
-  ramp, both mockups, and the style guide.
-- **Font pairing** — 9 curated faces (Geist bundled; rest via Google Fonts),
-  6 pairing presets, shuffle button in the toolbar.
-- **Contrast checker** — `lib/contrast.ts`, real WCAG 2.1 relative-luminance
-  math with AA/AAA normal/large verdicts, plus two roadmap items already in:
-  color-blindness simulation and an AA auto-fixer.
-- **Get Code / export** — `lib/export.ts`: CSS variables, Tailwind config,
-  SCSS, JSON tokens. Copy or download from the Export modal; live preview in
-  the mockup rail.
-- **Shareable links** — `lib/share.ts`: full state → base64url → `?s=` param.
-  The Share button copies a URL that recreates the project exactly.
-- **Edit / View toggle** — toolbar segmented control; View hides all chrome
-  for client presentations.
+## Architecture
 
-## Not built yet (intentional)
+Everything hangs off one shared state object:
 
-- Auth is a UI shell only ("Skip for now" always works) — the product promise
-  is no-signup, so wiring real auth is a later decision.
-- Pro layouts (Slides / Social / Newsletter) are locked sidebar items.
-- Custom font upload, autosave, undo/redo — proposal roadmap items.
+- `lib/store.ts` — the `ProjectState` (zustand): fonts, scale, overrides,
+  weights, leading, colors, fluid bounds, mockup copy. Every panel, mockup,
+  and export reads from here. Undo/redo history lives alongside.
+- `lib/share.ts` — packs the whole state into a compressed base64url `?s=`
+  param. New state fields must be added to `KEY_MAP` or they silently drop
+  from share links.
+- `lib/scale.ts`, `lib/contrast.ts`, `lib/export.ts` — framework-free math
+  and code generation (modular + fluid scales, WCAG/APCA, six export
+  formats). Fully unit-tested.
+- `lib/workspace.ts` — the multi-project registry (localStorage).
+- `app/editor` + `components/editor/` — the tool; `app/page.tsx` +
+  `components/landing/` — the landing page, whose hero plays real editor
+  screenshots back as a simulated working session.
+
+No backend, no database, no env vars, no accounts — by design.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

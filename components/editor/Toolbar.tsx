@@ -12,7 +12,15 @@ import { Button, Check, Logo, Redo, Segmented, Select, Shuffle, Undo } from "@/c
 // dropdown + shuffle, HEADING/BODY font pickers, SIZE + RATIO fields, then
 // Share / Export / Upgrade to Pro on the right. Below the xl breakpoint the
 // font/size/ratio controls collapse into the "Aa" type menu.
-export function Toolbar({ onExport, onUpgrade }: { onExport: () => void; onUpgrade: () => void }) {
+export function Toolbar({
+  onExport,
+  onUpgrade,
+  onMenu,
+}: {
+  onExport: () => void;
+  onUpgrade: () => void;
+  onMenu?: () => void;
+}) {
   const project = useProject();
   const [copied, setCopied] = useState(false);
 
@@ -36,7 +44,7 @@ export function Toolbar({ onExport, onUpgrade }: { onExport: () => void; onUpgra
   };
 
   const share = async () => {
-    const url = buildShareUrl(project);
+    const url = await buildShareUrl(project);
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -49,6 +57,22 @@ export function Toolbar({ onExport, onUpgrade }: { onExport: () => void; onUpgra
 
   return (
     <div className="flex h-14 items-center gap-3 border-b border-line bg-white px-4 print:hidden">
+      {onMenu && (
+        <button
+          onClick={onMenu}
+          aria-label="Open navigation"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-line text-muted hover:bg-surface hover:text-ink md:hidden"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M4 7h16M4 12h16M4 17h16"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      )}
       <Segmented
         size="sm"
         options={[
@@ -106,7 +130,9 @@ export function Toolbar({ onExport, onUpgrade }: { onExport: () => void; onUpgra
             </option>
           )}
           {PRESETS.map((p) => (
-            <option key={p.name} value={p.name}>{p.name}</option>
+            <option key={p.name} value={p.name}>
+              {p.name}
+            </option>
           ))}
         </Select>
         <button
@@ -167,7 +193,9 @@ export function Toolbar({ onExport, onUpgrade }: { onExport: () => void; onUpgra
         <Button variant="outline" className="h-8 px-3 text-xs" onClick={onExport}>
           Export
         </Button>
-        <Button className="h-8 px-3 text-xs" onClick={onUpgrade}>Upgrade to Pro</Button>
+        <Button className="h-8 px-3 text-xs" onClick={onUpgrade}>
+          Upgrade to Pro
+        </Button>
       </div>
     </div>
   );
@@ -192,7 +220,9 @@ function WeightSelect({
       aria-label={label}
     >
       {WEIGHTS.map((w) => (
-        <option key={w} value={w}>{w}</option>
+        <option key={w} value={w}>
+          {w}
+        </option>
       ))}
     </Select>
   );
@@ -215,7 +245,9 @@ function SizeRatioInputs() {
         aria-label="Base size in px"
       />
       <span className="text-[10px] text-muted">px</span>
-      <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-muted">Ratio</span>
+      <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-muted">
+        Ratio
+      </span>
       <input
         type="number"
         step={0.001}

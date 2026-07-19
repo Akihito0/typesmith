@@ -27,13 +27,7 @@ const LAYOUTS: { id: ToolId; label: string; pro?: boolean }[] = [
   { id: "newsletter", label: "Newsletter", pro: true },
 ];
 
-export function Sidebar({
-  active,
-  onSelect,
-}: {
-  active: ToolId;
-  onSelect: (t: ToolId) => void;
-}) {
+export function Sidebar({ active, onSelect }: { active: ToolId; onSelect: (t: ToolId) => void }) {
   const router = useRouter();
   const hydrate = useProject((s) => s.hydrate);
   const projectName = useProject((s) => s.projectName);
@@ -149,9 +143,9 @@ export function Sidebar({
       const entries = Array.isArray(parsed) ? parsed : parsed?.projects;
       if (!Array.isArray(entries) || entries.length === 0) throw new Error("empty");
       // Fill any missing fields from defaults so old backups stay loadable.
-      useWorkspace.getState().importAll(
-        entries.map((en) => ({ ...en, state: { ...DEFAULT_PROJECT, ...en.state } }))
-      );
+      useWorkspace
+        .getState()
+        .importAll(entries.map((en) => ({ ...en, state: { ...DEFAULT_PROJECT, ...en.state } })));
     } catch {
       window.alert("That file doesn't look like a TypeSmith workspace backup.");
     }
@@ -160,7 +154,7 @@ export function Sidebar({
   const deleteProject = (id: string) => {
     const ws = useWorkspace.getState();
     const entry = ws.projects.find((e) => e.id === id);
-    const name = id === activeId ? projectName : entry?.state.projectName ?? "this project";
+    const name = id === activeId ? projectName : (entry?.state.projectName ?? "this project");
     if (!window.confirm(`Delete “${name}”? This can't be undone.`)) return;
     ws.remove(id);
     if (id !== activeId) return;
@@ -313,7 +307,12 @@ export function Sidebar({
           {justCreated ? <span className="swap-in">Created -&gt;</span> : "+ New Asset"}
         </Button>
         <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-muted">
-          <a href={DOCS_URL} target="_blank" rel="noreferrer" className="hover:text-ink hover:underline">
+          <a
+            href={DOCS_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-ink hover:underline"
+          >
             Docs
           </a>
           <span className="inline-flex items-center gap-1.5">

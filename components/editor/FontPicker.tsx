@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { FONTS, fontById } from "@/lib/fonts";
 import { useCustomFonts, ACCEPTED_FONT_TYPES } from "@/lib/customFonts";
-import { GOOGLE_FONTS, gfId, ensureGoogleFont } from "@/lib/googleFonts";
+import { GOOGLE_FONTS, gfId, gfFallback, ensureGoogleFont } from "@/lib/googleFonts";
 import { Chevron } from "@/components/ui";
 
 // Searchable font picker: curated faces, session uploads, and the Google
@@ -95,35 +95,43 @@ export function FontPicker({
           <div className="max-h-72 overflow-y-auto p-1.5 ts-scroll">
             {curated.length > 0 && <GroupLabel>Curated</GroupLabel>}
             {curated.map((f) => (
-              <Option key={f.id} active={value === f.id} onClick={() => pick(f.id)} tag={f.category}>
+              <Option
+                key={f.id}
+                active={value === f.id}
+                onClick={() => pick(f.id)}
+                tag={f.category}
+                stack={f.stack}
+              >
                 {f.name}
               </Option>
             ))}
 
             {uploaded.length > 0 && <GroupLabel>Uploaded (this session)</GroupLabel>}
             {uploaded.map((f) => (
-              <Option key={f.id} active={value === f.id} onClick={() => pick(f.id)} tag="upload">
+              <Option
+                key={f.id}
+                active={value === f.id}
+                onClick={() => pick(f.id)}
+                tag="upload"
+                stack={f.stack}
+              >
                 {f.name}
               </Option>
             ))}
 
             {google.length > 0 && <GroupLabel>Google Fonts</GroupLabel>}
-            {google.map((f) => {
-              const id = gfId(f.name);
-              return (
-                <Option
-                  key={id}
-                  active={value === id}
-                  onClick={() => {
-                    ensureGoogleFont(f.name);
-                    pick(id);
-                  }}
-                  tag={f.category}
-                >
-                  {f.name}
-                </Option>
-              );
-            })}
+            {google.map((f) => (
+              <GoogleOption
+                key={f.name}
+                name={f.name}
+                category={f.category}
+                active={value === gfId(f.name)}
+                onClick={() => {
+                  ensureGoogleFont(f.name);
+                  pick(gfId(f.name));
+                }}
+              />
+            ))}
 
             {curated.length + uploaded.length + google.length === 0 && (
               <p className="px-2.5 py-3 text-center text-xs text-muted">No fonts match “{q}”.</p>
@@ -160,26 +168,72 @@ function GroupLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Option({
-  children,
-  active,
-  onClick,
-  tag,
-}: {
-  children: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
-  tag?: string;
-}) {
+const Option = forwardRef<
+  HTMLButtonElement,
+  {
+    children: React.ReactNode;
+    active: boolean;
+    onClick: () => void;
+    tag?: string;
+    /** css stack the option label renders in — the preview IS the font */
+    stack?: string;
+  }
+>(function Option({ children, active, onClick, tag, stack }, ref) {
   return (
     <button
+      ref={ref}
       onClick={onClick}
-      className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-[13px] ${
+      className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-[14px] ${
         active ? "bg-brand-50 font-medium text-brand-700" : "text-ink hover:bg-surface"
       }`}
     >
-      <span className="truncate">{children}</span>
+      <span className="truncate" style={stack ? { fontFamily: stack } : undefined}>
+        {children}
+      </span>
       {tag && <span className="ml-2 shrink-0 text-[9px] uppercase text-muted/70">{tag}</span>}
     </button>
+  );
+});
+
+// Google option: loads its stylesheet only once it scrolls into view, then
+// renders its own name in its own face.
+function GoogleOption({
+  name,
+  category,
+  active,
+  onClick,
+}: {
+  name: string;
+  category: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const [seen, setSeen] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        ensureGoogleFont(name);
+        setSeen(true);
+        io.disconnect();
+      }
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [name]);
+
+  return (
+    <Option
+      ref={ref}
+      active={active}
+      onClick={onClick}
+      tag={category}
+      stack={seen ? `'${name}', ${gfFallback(name)}` : undefined}
+    >
+      {name}
+    </Option>
   );
 }

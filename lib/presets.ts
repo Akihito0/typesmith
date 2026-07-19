@@ -15,7 +15,13 @@ export const PRESETS: Preset[] = [
   { name: "Editorial", heading: "playfair", body: "lora", base: 18, ratio: 1.333 },
   { name: "Technical Docs", heading: "inter", body: "ibm-plex-mono", base: 15, ratio: 1.2 },
   { name: "Bold Display", heading: "sora", body: "inter", base: 17, ratio: 1.5 },
-  { name: "Developer Portfolio", heading: "geist-sans", body: "jetbrains-mono", base: 16, ratio: 1.414 },
+  {
+    name: "Developer Portfolio",
+    heading: "geist-sans",
+    body: "jetbrains-mono",
+    base: 16,
+    ratio: 1.414,
+  },
 ];
 
 export function presetByName(name: string): Preset | undefined {

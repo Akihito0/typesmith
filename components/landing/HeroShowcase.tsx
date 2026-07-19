@@ -19,6 +19,10 @@
 import Image from "next/image";
 import { useEffect, useState, type ReactNode } from "react";
 
+// next/image doesn't prepend basePath to unoptimized srcs (GitHub Pages
+// export), so it's applied explicitly here.
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 const STORY = [
   {
     src: "/shots/01-type-scale.png",
@@ -91,8 +95,7 @@ const RESUME_MS = 8000;
 
 function prefersReducedMotion(): boolean {
   return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 }
 
@@ -140,8 +143,8 @@ function ShowcasePanel({
       {/* header: live caption + panel tabs */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-canvas-line px-6 py-3 font-mono text-[10px] uppercase tracking-[0.15em] text-gray-500 md:px-8">
         <span className="text-brand-100">
-          <span className="text-gray-500">
-            Fig. A <span className="mx-1 text-brand-500">&#9632;</span>
+          <span aria-hidden="true" className="mr-1.5 text-brand-500">
+            &#9632;
           </span>
           {frame.caption}
         </span>
@@ -191,7 +194,7 @@ function ShowcasePanel({
         {STORY.map((f, i) => (
           <Image
             key={f.src}
-            src={f.src}
+            src={`${BASE}${f.src}`}
             alt={i === step ? f.alt : ""}
             width={1440}
             height={900}

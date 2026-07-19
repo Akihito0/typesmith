@@ -12,7 +12,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "geist": "1.3.1",
@@ -26,10 +29,12 @@
     "@types/node": "20.14.0",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
+    "@vitest/coverage-v8": "^4.1.10",
     "autoprefixer": "10.4.19",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.5",
     "postcss": "8.4.39",
+    "prettier": "^3.9.5",
     "tailwindcss": "3.4.7",
     "typescript": "5.5.4",
     "vitest": "^4.1.10"

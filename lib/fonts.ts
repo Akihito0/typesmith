@@ -16,15 +16,45 @@ export interface FontDef {
 }
 
 export const FONTS: FontDef[] = [
-  { id: "geist-sans", name: "Geist Sans", stack: "var(--font-geist-sans), system-ui, sans-serif", category: "sans" },
-  { id: "geist-mono", name: "Geist Mono", stack: "var(--font-geist-mono), ui-monospace, monospace", category: "mono" },
+  {
+    id: "geist-sans",
+    name: "Geist Sans",
+    stack: "var(--font-geist-sans), system-ui, sans-serif",
+    category: "sans",
+  },
+  {
+    id: "geist-mono",
+    name: "Geist Mono",
+    stack: "var(--font-geist-mono), ui-monospace, monospace",
+    category: "mono",
+  },
   { id: "inter", name: "Inter", stack: "'Inter', system-ui, sans-serif", category: "sans" },
-  { id: "space-grotesk", name: "Space Grotesk", stack: "'Space Grotesk', system-ui, sans-serif", category: "display" },
+  {
+    id: "space-grotesk",
+    name: "Space Grotesk",
+    stack: "'Space Grotesk', system-ui, sans-serif",
+    category: "display",
+  },
   { id: "sora", name: "Sora", stack: "'Sora', system-ui, sans-serif", category: "display" },
-  { id: "playfair", name: "Playfair Display", stack: "'Playfair Display', Georgia, serif", category: "serif" },
+  {
+    id: "playfair",
+    name: "Playfair Display",
+    stack: "'Playfair Display', Georgia, serif",
+    category: "serif",
+  },
   { id: "lora", name: "Lora", stack: "'Lora', Georgia, serif", category: "serif" },
-  { id: "ibm-plex-mono", name: "IBM Plex Mono", stack: "'IBM Plex Mono', ui-monospace, monospace", category: "mono" },
-  { id: "jetbrains-mono", name: "JetBrains Mono", stack: "'JetBrains Mono', ui-monospace, monospace", category: "mono" },
+  {
+    id: "ibm-plex-mono",
+    name: "IBM Plex Mono",
+    stack: "'IBM Plex Mono', ui-monospace, monospace",
+    category: "mono",
+  },
+  {
+    id: "jetbrains-mono",
+    name: "JetBrains Mono",
+    stack: "'JetBrains Mono', ui-monospace, monospace",
+    category: "mono",
+  },
 ];
 
 // Session-only fonts registered at runtime via the FontFace API (see

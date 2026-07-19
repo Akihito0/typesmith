@@ -3,6 +3,9 @@
 CLAUDE.md
 TASK.md
 
+# Isolated verification build dirs (see next.config.mjs)
+.next-pages
+
 # Playwright
 /test-results/
 /playwright-report/

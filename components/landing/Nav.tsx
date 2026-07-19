@@ -23,7 +23,11 @@ export function Nav({ onLogin }: { onLogin: () => void }) {
 
         <div className="hidden items-center gap-8 font-mono text-[11px] uppercase tracking-[0.15em] text-gray-400 md:flex">
           {LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="group inline-flex items-center hover:text-white">
+            <a
+              key={l.href}
+              href={l.href}
+              className="group inline-flex items-center hover:text-white"
+            >
               <span
                 aria-hidden="true"
                 className="inline-block w-0 overflow-hidden text-brand-500 opacity-0 transition-all duration-200 group-hover:mr-1 group-hover:w-[0.6em] group-hover:opacity-100"
@@ -48,7 +52,10 @@ export function Nav({ onLogin }: { onLogin: () => void }) {
           >
             <span className="sm:hidden">Editor</span>
             <span className="hidden sm:inline">Open Editor</span>
-            <span aria-hidden="true" className="inline-block transition-transform duration-200 group-hover:translate-x-1">
+            <span
+              aria-hidden="true"
+              className="inline-block transition-transform duration-200 group-hover:translate-x-1"
+            >
               -&gt;
             </span>
           </Link>

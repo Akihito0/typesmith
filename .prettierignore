@@ -1,0 +1,12 @@
+node_modules
+.next
+.next-ci
+.next-pages
+out
+coverage
+playwright-report
+test-results
+public
+package-lock.json
+CLAUDE.md
+TASK.md
