@@ -8,19 +8,7 @@ import { buildShareUrl } from "@/lib/share";
 import { FontPicker } from "./FontPicker";
 import { Button, Check, Chevron, Logo, Redo, Select, Shuffle, Undo } from "@/components/ui";
 import type { ToolId } from "./types";
-
-// Top toolbar from the screenshots: Edit|View toggle, TypeSmith logo, preset
-// dropdown + shuffle, HEADING/BODY font pickers, SIZE + RATIO fields, then
-// Share / Export / Upgrade to Pro on the right. Below the xl breakpoint the
-// font/size/ratio controls collapse into the "Aa" type menu.
-// Layout options that appear in the View dropdown — mirrors the Sidebar LAYOUTS list.
-const VIEW_LAYOUTS: { id: ToolId; label: string; pro?: boolean }[] = [
-  { id: "website", label: "Website" },
-  { id: "mobile", label: "Mobile App" },
-  { id: "slides", label: "Slides", pro: true },
-  { id: "social", label: "Social", pro: true },
-  { id: "newsletter", label: "Newsletter", pro: true },
-];
+import { LAYOUTS } from "./Sidebar";
 
 export function Toolbar({
   onExport,
@@ -452,7 +440,7 @@ function EditViewControl({
             <p className="mb-1 px-2 pt-1 text-[9px] font-semibold uppercase tracking-wider text-muted">
               Layouts
             </p>
-            {VIEW_LAYOUTS.map((item) => (
+            {LAYOUTS.map((item) => (
               <button
                 key={item.id}
                 type="button"

@@ -19,7 +19,7 @@ const DESIGN_SYSTEM: { id: ToolId; label: string }[] = [
 ];
 
 // "pro" items are badged but fully usable — free during the beta.
-const LAYOUTS: { id: ToolId; label: string; pro?: boolean }[] = [
+export const LAYOUTS: { id: ToolId; label: string; pro?: boolean }[] = [
   { id: "website", label: "Website" },
   { id: "mobile", label: "Mobile App" },
   { id: "slides", label: "Slides", pro: true },
