@@ -39,6 +39,14 @@ export function WebsiteMockup() {
   // "Engineering *precision* for modern typography."
   const words = p.headline.split(" ");
 
+  // Readable colors, always computed against the surface a thing sits on, so
+  // solid buttons/chips never become an unreadable blob on light accents or a
+  // light page: `ink` is the page's own text color, `onInk` the text that sits
+  // on an ink-filled chip, `onAccent` the text on an accent-filled button.
+  const ink = readableInk(p.background);
+  const onInk = readableInk(ink);
+  const onAccent = readableInk(p.accent);
+
   return (
     <div className="flex h-full flex-col">
       {/* responsive width toggle */}
@@ -56,9 +64,13 @@ export function WebsiteMockup() {
         ))}
       </div>
 
-      <div className="flex flex-1 justify-center overflow-auto ts-scroll">
+      <div className="flex flex-1 flex-col overflow-auto ts-scroll">
+        {/* Browser card sized to its content and centered (m-auto) — so a short
+            page floats in the middle of the canvas instead of stretching to a
+            tall frame with a dead band below. Degrades to top-aligned scroll
+            when the content is taller than the canvas. */}
         <div
-          className="flex h-fit min-h-full flex-col overflow-hidden rounded-lg border border-line bg-white shadow-panel transition-all"
+          className="m-auto flex h-fit flex-col overflow-hidden rounded-lg border border-line bg-white shadow-panel transition-all"
           style={{ width: frameWidth, maxWidth: "100%" }}
         >
           {/* browser chrome */}
@@ -89,7 +101,7 @@ export function WebsiteMockup() {
               responds to the FRAME width (the `width` toggle), not the
               browser viewport — CSS breakpoints don't know how narrow the
               frame is. */}
-          <div style={{ background: p.background, color: readableInk(p.background) }}>
+          <div style={{ background: p.background, color: ink }}>
             {/* nav */}
             <div
               className={`flex items-center justify-between gap-3 py-4 ${
@@ -101,8 +113,8 @@ export function WebsiteMockup() {
                 style={{ fontFamily: heading.stack }}
               >
                 <span
-                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
-                  style={{ background: readableInk(p.background) }}
+                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold"
+                  style={{ background: ink, color: onInk }}
                 >
                   V
                 </span>
@@ -117,8 +129,8 @@ export function WebsiteMockup() {
                 </span>
               )}
               <span
-                className="shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-white"
-                style={{ background: readableInk(p.background), fontFamily: body.stack }}
+                className="shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium"
+                style={{ background: ink, color: onInk, fontFamily: body.stack }}
               >
                 Get Started
               </span>
@@ -164,8 +176,8 @@ export function WebsiteMockup() {
                 style={{ fontFamily: body.stack }}
               >
                 <span
-                  className="rounded-md px-4 py-2 text-sm font-medium text-white"
-                  style={{ background: p.accent }}
+                  className="rounded-md px-4 py-2 text-sm font-medium"
+                  style={{ background: p.accent, color: onAccent }}
                 >
                   Deploy Now
                 </span>
@@ -210,6 +222,7 @@ export function WebsiteMockup() {
 // ---- Mobile mockup ----------------------------------------------------------
 export function MobileMockup() {
   const { p, heading, body, px } = useDesign();
+  const onAccent = readableInk(p.accent);
 
   return (
     // Centered both ways — the phone is the panel's single object.
@@ -262,8 +275,8 @@ export function MobileMockup() {
                   {p.projectName}
                 </span>
                 <span
-                  className="grid h-7 w-7 place-items-center rounded-full text-[10px] font-bold text-white"
-                  style={{ background: p.accent }}
+                  className="grid h-7 w-7 place-items-center rounded-full text-[10px] font-bold"
+                  style={{ background: p.accent, color: onAccent }}
                 >
                   {initials(p.author)}
                 </span>
@@ -289,8 +302,8 @@ export function MobileMockup() {
                   {p.body}
                 </p>
                 <span
-                  className="mt-3 inline-block rounded-md px-4 py-2 text-xs font-medium text-white"
-                  style={{ background: p.accent, fontFamily: body.stack }}
+                  className="mt-3 inline-block rounded-md px-4 py-2 text-xs font-medium"
+                  style={{ background: p.accent, color: onAccent, fontFamily: body.stack }}
                 >
                   Get Started
                 </span>

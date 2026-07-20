@@ -48,7 +48,8 @@ function toBullets(body: string): string[] {
 const SLIDE_COUNT = 3;
 
 export function SlidesPanel() {
-  const { p, heading, body, px, ink } = useDesign();
+  const { p, heading, body, ink } = useDesign();
+  const onAccent = readableInk(p.accent);
   const [slide, setSlide] = useState(0);
   const stageRef = useRef<HTMLDivElement>(null);
 
@@ -79,17 +80,17 @@ export function SlidesPanel() {
 
   const slides = [
     // 1 — title
-    <div key="title" className="flex h-full flex-col justify-center px-[8%]">
+    <div key="title" className="flex h-full flex-col px-[8%] py-[9%]">
       <p
         className="text-[0.9em] font-semibold uppercase tracking-[0.16em]"
         style={{ fontFamily: body.stack, color: p.accent }}
       >
         {p.subhead}
       </p>
-      <h2 className="mt-[2%] font-bold" style={{ ...headingStyle, fontSize: "2.6em" }}>
+      <h2 className="mt-[3%] font-bold" style={{ ...headingStyle, fontSize: "2.6em" }}>
         {p.headline}
       </h2>
-      <p className="mt-auto pb-[6%] text-[0.85em] opacity-60" style={{ fontFamily: body.stack }}>
+      <p className="mt-auto text-[0.85em] opacity-60" style={{ fontFamily: body.stack }}>
         {p.projectName} · {p.author}
       </p>
     </div>,
@@ -127,8 +128,8 @@ export function SlidesPanel() {
         {p.previewText || "Modern Typography"}
       </h2>
       <span
-        className="mt-[4%] rounded-md px-[1.4em] py-[0.6em] text-[0.9em] font-medium text-white"
-        style={{ background: p.accent, fontFamily: body.stack }}
+        className="mt-[4%] rounded-md px-[1.4em] py-[0.6em] text-[0.9em] font-medium"
+        style={{ background: p.accent, color: onAccent, fontFamily: body.stack }}
       >
         Get Started
       </span>
@@ -140,17 +141,18 @@ export function SlidesPanel() {
 
   return (
     <div className="flex h-full flex-col items-center gap-3 overflow-auto ts-scroll">
-      {/* 16:9 slide frame; font-size on the frame drives the em-based type inside */}
+      {/* 16:9 slide frame. The frame is a size container and the em-based type
+          is sized in cqw — a fraction of the frame's OWN width — so the slide
+          scales identically inline and when presented fullscreen (a vw/px cap
+          used to freeze the type tiny on the blown-up stage). */}
       <div ref={stageRef} className="slides-stage flex w-full max-w-3xl flex-1 items-center">
         <div
-          className="slides-frame aspect-video w-full overflow-hidden rounded-lg border border-line shadow-panel"
-          style={{
-            background: p.background,
-            color: ink,
-            fontSize: `clamp(10px, 2.2vw, ${px("Lead", 22)}px)`,
-          }}
+          className="slides-frame aspect-video w-full overflow-hidden rounded-lg border border-line shadow-panel [container-type:inline-size]"
+          style={{ background: p.background, color: ink }}
         >
-          {slides[slide]}
+          <div className="h-full w-full" style={{ fontSize: "clamp(11px, 3cqw, 40px)" }}>
+            {slides[slide]}
+          </div>
         </div>
       </div>
 
@@ -200,139 +202,40 @@ export function SlidesPanel() {
 // ---- Social -----------------------------------------------------------------
 export function SocialPanel() {
   const { p, heading, body, ink } = useDesign();
+  const onAccent = readableInk(p.accent);
 
   return (
-    <div className="flex h-full flex-wrap content-start items-start justify-center gap-6 overflow-auto py-2 ts-scroll">
-      {/* square post */}
-      <div className="w-[340px] overflow-hidden rounded-xl border border-line bg-white shadow-panel">
-        <div className="flex items-center gap-2.5 px-3.5 py-2.5">
-          <span
-            className="grid h-8 w-8 place-items-center rounded-full text-[11px] font-bold text-white"
-            style={{ background: p.accent }}
-          >
-            {initials(p.projectName)}
-          </span>
-          <div className="leading-tight">
-            <p className="text-[13px] font-semibold text-ink">{p.projectName}</p>
-            <p className="text-[11px] text-muted">Sponsored</p>
+    // Outer scrolls; the inner cluster uses m-auto so it sits in the middle of
+    // the canvas when it fits and degrades to top-aligned scrolling (never
+    // clipped) when the viewport is short.
+    <div className="flex h-full overflow-auto py-6 ts-scroll">
+      <div className="m-auto flex flex-wrap items-center justify-center gap-6 px-6">
+        {/* square post */}
+        <div className="w-[340px] overflow-hidden rounded-xl border border-line bg-white shadow-panel">
+          <div className="flex items-center gap-2.5 px-3.5 py-2.5">
+            <span
+              className="grid h-8 w-8 place-items-center rounded-full text-[11px] font-bold"
+              style={{ background: p.accent, color: onAccent }}
+            >
+              {initials(p.projectName)}
+            </span>
+            <div className="leading-tight">
+              <p className="text-[13px] font-semibold text-ink">{p.projectName}</p>
+              <p className="text-[11px] text-muted">Sponsored</p>
+            </div>
           </div>
-        </div>
-        <div
-          className="flex aspect-square flex-col justify-center px-8"
-          style={{ background: p.background, color: ink }}
-        >
-          <p
-            className="text-[11px] font-semibold uppercase tracking-[0.14em]"
-            style={{ fontFamily: body.stack, color: p.accent }}
-          >
-            {p.subhead}
-          </p>
-          <h3
-            className="mt-2 text-[30px]"
-            style={{
-              fontFamily: heading.stack,
-              fontWeight: p.headingWeight,
-              lineHeight: p.headingLeading,
-              letterSpacing: `${p.headingTracking}em`,
-            }}
-          >
-            {p.previewText || "Modern Typography"}
-          </h3>
-        </div>
-        <div className="px-3.5 py-3 text-[12px] text-ink" style={{ lineHeight: 1.45 }}>
-          <b>{p.projectName}</b> <span className="text-muted">{p.body.slice(0, 110)}…</span>
-        </div>
-      </div>
-
-      {/* post card (X/LinkedIn-style) */}
-      <div className="w-[400px] rounded-xl border border-line bg-white p-4 shadow-panel">
-        <div className="flex items-center gap-2.5">
-          <span
-            className="grid h-9 w-9 place-items-center rounded-full text-[12px] font-bold text-white"
-            style={{ background: p.accent }}
-          >
-            {initials(p.author)}
-          </span>
-          <div className="leading-tight">
-            <p className="text-[13px] font-semibold text-ink">{p.author}</p>
-            <p className="text-[11px] text-muted">
-              @{p.projectName.toLowerCase().replace(/\s+/g, "")}
-            </p>
-          </div>
-        </div>
-        <p
-          className="mt-3 text-[14px] text-ink"
-          style={{ fontFamily: body.stack, lineHeight: p.bodyLeading }}
-        >
-          {p.headline}
-        </p>
-        {/* link preview card */}
-        <div className="mt-3 overflow-hidden rounded-lg border border-line">
           <div
-            className="flex h-36 flex-col justify-center px-6"
+            className="flex aspect-square flex-col justify-center px-8"
             style={{ background: p.background, color: ink }}
           >
-            <h4
-              className="text-[22px]"
-              style={{
-                fontFamily: heading.stack,
-                fontWeight: p.headingWeight,
-                lineHeight: p.headingLeading,
-                letterSpacing: `${p.headingTracking}em`,
-              }}
-            >
-              {p.previewText || "Modern Typography"}
-            </h4>
-          </div>
-          <div className="border-t border-line px-3 py-2">
-            <p className="text-[11px] text-muted">
-              typesmith.io/{p.projectName.toLowerCase().replace(/\s+/g, "-")}
-            </p>
-            <p className="text-[12px] font-medium text-ink">{p.subhead}</p>
-          </div>
-        </div>
-        <div className="mt-3 flex gap-6 text-[11px] text-muted">
-          <span>💬 128</span>
-          <span>🔁 342</span>
-          <span>❤️ 2.1k</span>
-        </div>
-      </div>
-
-      {/* 9:16 story */}
-      <div className="w-[240px] overflow-hidden rounded-xl border border-line shadow-panel">
-        <div
-          className="relative flex flex-col justify-between p-5"
-          style={{ background: p.background, color: ink, aspectRatio: "9 / 16" }}
-        >
-          {/* story progress bar + account row */}
-          <div>
-            <div className="flex gap-1">
-              <span className="h-0.5 flex-1 rounded-full" style={{ background: p.accent }} />
-              <span className="h-0.5 flex-1 rounded-full bg-current opacity-20" />
-              <span className="h-0.5 flex-1 rounded-full bg-current opacity-20" />
-            </div>
-            <div className="mt-3 flex items-center gap-2">
-              <span
-                className="grid h-7 w-7 place-items-center rounded-full text-[10px] font-bold text-white"
-                style={{ background: p.accent }}
-              >
-                {initials(p.projectName)}
-              </span>
-              <span className="text-[11px] font-semibold" style={{ fontFamily: body.stack }}>
-                {p.projectName.toLowerCase().replace(/\s+/g, "")}
-              </span>
-            </div>
-          </div>
-
-          <div>
             <p
-              className="text-[10px] font-semibold uppercase tracking-[0.16em]"
+              className="text-[11px] font-semibold uppercase tracking-[0.14em]"
               style={{ fontFamily: body.stack, color: p.accent }}
             >
               {p.subhead}
             </p>
             <h3
-              className="mt-2 text-[26px]"
+              className="mt-2 text-[30px]"
               style={{
                 fontFamily: heading.stack,
                 fontWeight: p.headingWeight,
@@ -343,13 +246,118 @@ export function SocialPanel() {
               {p.previewText || "Modern Typography"}
             </h3>
           </div>
+          <div className="px-3.5 py-3 text-[12px] text-ink" style={{ lineHeight: 1.45 }}>
+            <b>{p.projectName}</b> <span className="text-muted">{p.body.slice(0, 110)}…</span>
+          </div>
+        </div>
 
-          <span
-            className="self-center rounded-full px-5 py-2 text-[11px] font-medium text-white"
-            style={{ background: p.accent, fontFamily: body.stack }}
+        {/* post card (X/LinkedIn-style) */}
+        <div className="w-[400px] rounded-xl border border-line bg-white p-4 shadow-panel">
+          <div className="flex items-center gap-2.5">
+            <span
+              className="grid h-9 w-9 place-items-center rounded-full text-[12px] font-bold"
+              style={{ background: p.accent, color: onAccent }}
+            >
+              {initials(p.author)}
+            </span>
+            <div className="leading-tight">
+              <p className="text-[13px] font-semibold text-ink">{p.author}</p>
+              <p className="text-[11px] text-muted">
+                @{p.projectName.toLowerCase().replace(/\s+/g, "")}
+              </p>
+            </div>
+          </div>
+          <p
+            className="mt-3 text-[14px] text-ink"
+            style={{ fontFamily: body.stack, lineHeight: p.bodyLeading }}
           >
-            Swipe up -&gt;
-          </span>
+            {p.headline}
+          </p>
+          {/* link preview card */}
+          <div className="mt-3 overflow-hidden rounded-lg border border-line">
+            <div
+              className="flex h-36 flex-col justify-center px-6"
+              style={{ background: p.background, color: ink }}
+            >
+              <h4
+                className="text-[22px]"
+                style={{
+                  fontFamily: heading.stack,
+                  fontWeight: p.headingWeight,
+                  lineHeight: p.headingLeading,
+                  letterSpacing: `${p.headingTracking}em`,
+                }}
+              >
+                {p.previewText || "Modern Typography"}
+              </h4>
+            </div>
+            <div className="border-t border-line px-3 py-2">
+              <p className="text-[11px] text-muted">
+                typesmith.io/{p.projectName.toLowerCase().replace(/\s+/g, "-")}
+              </p>
+              <p className="text-[12px] font-medium text-ink">{p.subhead}</p>
+            </div>
+          </div>
+          <div className="mt-3 flex gap-6 text-[11px] text-muted">
+            <span>💬 128</span>
+            <span>🔁 342</span>
+            <span>❤️ 2.1k</span>
+          </div>
+        </div>
+
+        {/* 9:16 story */}
+        <div className="w-[240px] overflow-hidden rounded-xl border border-line shadow-panel">
+          <div
+            className="relative flex flex-col justify-between p-5"
+            style={{ background: p.background, color: ink, aspectRatio: "9 / 16" }}
+          >
+            {/* story progress bar + account row */}
+            <div>
+              <div className="flex gap-1">
+                <span className="h-0.5 flex-1 rounded-full" style={{ background: p.accent }} />
+                <span className="h-0.5 flex-1 rounded-full bg-current opacity-20" />
+                <span className="h-0.5 flex-1 rounded-full bg-current opacity-20" />
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span
+                  className="grid h-7 w-7 place-items-center rounded-full text-[10px] font-bold"
+                  style={{ background: p.accent, color: onAccent }}
+                >
+                  {initials(p.projectName)}
+                </span>
+                <span className="text-[11px] font-semibold" style={{ fontFamily: body.stack }}>
+                  {p.projectName.toLowerCase().replace(/\s+/g, "")}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <p
+                className="text-[10px] font-semibold uppercase tracking-[0.16em]"
+                style={{ fontFamily: body.stack, color: p.accent }}
+              >
+                {p.subhead}
+              </p>
+              <h3
+                className="mt-2 text-[26px]"
+                style={{
+                  fontFamily: heading.stack,
+                  fontWeight: p.headingWeight,
+                  lineHeight: p.headingLeading,
+                  letterSpacing: `${p.headingTracking}em`,
+                }}
+              >
+                {p.previewText || "Modern Typography"}
+              </h3>
+            </div>
+
+            <span
+              className="self-center rounded-full px-5 py-2 text-[11px] font-medium"
+              style={{ background: p.accent, color: onAccent, fontFamily: body.stack }}
+            >
+              Swipe up -&gt;
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -359,6 +367,7 @@ export function SocialPanel() {
 // ---- Newsletter -------------------------------------------------------------
 export function NewsletterPanel() {
   const { p, heading, body, ink } = useDesign();
+  const onAccent = readableInk(p.accent);
 
   const downloadHtml = () => {
     const blob = new Blob([generateEmailHtml(p)], { type: "text/html" });
@@ -370,61 +379,66 @@ export function NewsletterPanel() {
   };
 
   return (
-    <div className="flex h-full flex-col items-center gap-3 overflow-auto py-2 ts-scroll">
-      <button
-        onClick={downloadHtml}
-        className="self-end rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface"
-      >
-        Download email HTML
-      </button>
-      <div className="h-fit w-full max-w-xl overflow-hidden rounded-lg border border-line bg-white shadow-panel">
-        {/* email client chrome */}
-        <div className="border-b border-line bg-surface px-5 py-3">
-          <p className="text-[14px] font-semibold text-ink">{p.headline}</p>
-          <p className="mt-0.5 text-[12px] text-muted">
-            {p.author} &lt;hello@{p.projectName.toLowerCase().replace(/\s+/g, "")}.io&gt; —{" "}
-            {p.subhead}
-          </p>
-        </div>
-
-        {/* email body */}
-        <div style={{ background: p.background, color: ink }}>
-          <div className="px-8 py-8">
-            <span
-              className="grid h-9 w-9 place-items-center rounded-md text-[13px] font-bold text-white"
-              style={{ background: p.accent }}
-            >
-              {initials(p.projectName)}
-            </span>
-            <h2
-              className="mt-5 text-[26px]"
-              style={{
-                fontFamily: heading.stack,
-                fontWeight: p.headingWeight,
-                lineHeight: p.headingLeading,
-                letterSpacing: `${p.headingTracking}em`,
-              }}
-            >
-              {p.headline}
-            </h2>
-            <p
-              className="mt-4 text-[14px] opacity-80"
-              style={{ fontFamily: body.stack, lineHeight: p.bodyLeading }}
-            >
-              {p.body}
+    <div className="flex h-full flex-col overflow-hidden py-2">
+      {/* action pinned top-right; the email itself centers below it */}
+      <div className="flex shrink-0 justify-end px-2 pb-3">
+        <button
+          onClick={downloadHtml}
+          className="rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface"
+        >
+          Download email HTML
+        </button>
+      </div>
+      <div className="flex flex-1 overflow-auto ts-scroll">
+        <div className="m-auto h-fit w-full max-w-xl overflow-hidden rounded-lg border border-line bg-white shadow-panel">
+          {/* email client chrome */}
+          <div className="border-b border-line bg-surface px-5 py-3">
+            <p className="text-[14px] font-semibold text-ink">{p.headline}</p>
+            <p className="mt-0.5 text-[12px] text-muted">
+              {p.author} &lt;hello@{p.projectName.toLowerCase().replace(/\s+/g, "")}.io&gt; —{" "}
+              {p.subhead}
             </p>
-            <span
-              className="mt-6 inline-block rounded-md px-5 py-2.5 text-[13px] font-medium text-white"
-              style={{ background: p.accent, fontFamily: body.stack }}
-            >
-              Read the full story
-            </span>
           </div>
-          <div
-            className="border-t px-8 py-4 text-[11px] opacity-50"
-            style={{ borderColor: "rgba(127,127,127,0.25)", fontFamily: body.stack }}
-          >
-            {p.projectName} · You&apos;re receiving this because you subscribed. Unsubscribe
+
+          {/* email body */}
+          <div style={{ background: p.background, color: ink }}>
+            <div className="px-8 py-8">
+              <span
+                className="grid h-9 w-9 place-items-center rounded-md text-[13px] font-bold"
+                style={{ background: p.accent, color: onAccent }}
+              >
+                {initials(p.projectName)}
+              </span>
+              <h2
+                className="mt-5 text-[26px]"
+                style={{
+                  fontFamily: heading.stack,
+                  fontWeight: p.headingWeight,
+                  lineHeight: p.headingLeading,
+                  letterSpacing: `${p.headingTracking}em`,
+                }}
+              >
+                {p.headline}
+              </h2>
+              <p
+                className="mt-4 text-[14px] opacity-80"
+                style={{ fontFamily: body.stack, lineHeight: p.bodyLeading }}
+              >
+                {p.body}
+              </p>
+              <span
+                className="mt-6 inline-block rounded-md px-5 py-2.5 text-[13px] font-medium"
+                style={{ background: p.accent, color: onAccent, fontFamily: body.stack }}
+              >
+                Read the full story
+              </span>
+            </div>
+            <div
+              className="border-t px-8 py-4 text-[11px] opacity-50"
+              style={{ borderColor: "rgba(127,127,127,0.25)", fontFamily: body.stack }}
+            >
+              {p.projectName} · You&apos;re receiving this because you subscribed. Unsubscribe
+            </div>
           </div>
         </div>
       </div>
