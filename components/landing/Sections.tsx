@@ -515,6 +515,12 @@ export function Editions({ onStart }: { onStart: () => void }) {
           <p className="mt-4 font-display text-6xl font-semibold text-ink">
             Free <span className="font-mono text-sm font-normal text-muted">while in beta</span>
           </p>
+          {/* Says plainly that this ends. No price until billing is real —
+              see lib/pro.ts. */}
+          <p className="mt-3 font-mono text-[11px] leading-relaxed text-muted">
+            Everything below is unlocked for everyone today. Pro becomes a paid plan when TypeSmith
+            leaves beta — projects made in beta stay yours and keep exporting.
+          </p>
           <ul className="mt-8 space-y-2.5">
             {PRO_FEATURES.map((f) => (
               <li key={f} className="font-mono text-[12px] text-ink/70">

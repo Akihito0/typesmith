@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProject, pickProjectState, DEFAULT_PROJECT } from "@/lib/store";
 import { useWorkspace, newProjectId } from "@/lib/workspace";
+import { isProLayout, isProUnlocked, PRO_STATUS_LABEL } from "@/lib/pro";
 import { Button, Chevron } from "@/components/ui";
 import type { ToolId } from "./types";
 
@@ -18,16 +19,28 @@ const DESIGN_SYSTEM: { id: ToolId; label: string }[] = [
   { id: "colors", label: "Colors" },
 ];
 
-// "pro" items are badged but fully usable — free during the beta.
-export const LAYOUTS: { id: ToolId; label: string; pro?: boolean }[] = [
-  { id: "website", label: "Website" },
-  { id: "mobile", label: "Mobile App" },
-  { id: "slides", label: "Slides", pro: true },
-  { id: "social", label: "Social", pro: true },
-  { id: "newsletter", label: "Newsletter", pro: true },
-];
+// "pro" is derived from lib/pro.ts, not hard-coded here, so ending the beta is
+// a one-line change there. Badged items stay fully usable while PRO_BETA_FREE.
+export const LAYOUTS: { id: ToolId; label: string; pro?: boolean }[] = (
+  [
+    { id: "website", label: "Website" },
+    { id: "mobile", label: "Mobile App" },
+    { id: "slides", label: "Slides" },
+    { id: "social", label: "Social" },
+    { id: "newsletter", label: "Newsletter" },
+  ] as { id: ToolId; label: string }[]
+).map((l) => ({ ...l, pro: isProLayout(l.id) || undefined }));
 
-export function Sidebar({ active, onSelect }: { active: ToolId; onSelect: (t: ToolId) => void }) {
+export function Sidebar({
+  active,
+  onSelect,
+  onUpgrade,
+}: {
+  active: ToolId;
+  onSelect: (t: ToolId) => void;
+  /** Where locked Pro items go once the beta ends. */
+  onUpgrade?: () => void;
+}) {
   const router = useRouter();
   const hydrate = useProject((s) => s.hydrate);
   const projectName = useProject((s) => s.projectName);
@@ -295,8 +308,11 @@ export function Sidebar({ active, onSelect }: { active: ToolId; onSelect: (t: To
               key={item.id}
               label={item.label}
               pro={item.pro}
+              locked={item.pro && !isProUnlocked()}
               active={active === item.id}
-              onClick={() => onSelect(item.id)}
+              // Free during the beta; once it ends, Pro items send you to the
+              // upgrade modal instead of opening.
+              onClick={() => (item.pro && !isProUnlocked() ? onUpgrade?.() : onSelect(item.id))}
             />
           ))}
         </Group>
@@ -339,18 +355,25 @@ function Item({
   label,
   active,
   pro,
+  locked,
   onClick,
 }: {
   label: string;
   active?: boolean;
   pro?: boolean;
+  locked?: boolean;
   onClick?: () => void;
 }) {
   return (
     <button
       onClick={onClick}
+      title={pro ? PRO_STATUS_LABEL : undefined}
       className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[13px] transition-colors ${
-        active ? "bg-brand-50 font-medium text-brand-700" : "text-ink hover:bg-surface"
+        active
+          ? "bg-brand-50 font-medium text-brand-700"
+          : locked
+            ? "text-muted hover:bg-surface hover:text-ink"
+            : "text-ink hover:bg-surface"
       }`}
     >
       <span>{label}</span>

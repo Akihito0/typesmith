@@ -141,7 +141,12 @@ function ShowcasePanel({
 }) {
   const frame = STORY[step];
   return (
-    <div className="grid-blueprint-faint flex h-full flex-col overflow-hidden border border-canvas-line bg-canvas">
+    // data-showcase is the mask target for the visual-regression baselines —
+    // this panel animates on a timer, so it can't be compared pixel to pixel.
+    <div
+      data-showcase
+      className="grid-blueprint-faint flex h-full flex-col overflow-hidden border border-canvas-line bg-canvas"
+    >
       {/* header: live caption + panel tabs */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-canvas-line px-6 py-3 font-mono text-[10px] uppercase tracking-[0.15em] text-gray-500 md:px-8">
         <span className="text-brand-100">

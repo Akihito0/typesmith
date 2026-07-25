@@ -3,10 +3,12 @@
 import { useEffect, useRef } from "react";
 import { Button, Check } from "@/components/ui";
 import { useFocusTrap } from "@/components/ui/useFocusTrap";
+import { isProUnlocked, PRO_STATUS_NOTICE } from "@/lib/pro";
 
-// Opened by "Upgrade to Pro". There is no billing — TypeSmith is free while
-// in beta and the Pro layouts are already unlocked — so this is an honest
-// status card, not a checkout.
+// Opened by "Upgrade to Pro". While the beta runs there is no billing — the
+// Pro layouts are already unlocked for everyone — so this is an honest status
+// card, not a checkout. It becomes the upsell when PRO_BETA_FREE flips
+// (lib/pro.ts); no copy here needs editing at that point.
 const PRO_FEATURES = [
   "Slides layout — present your type system as a deck",
   "Social layout — post and link-card mockups",
@@ -54,7 +56,8 @@ export function ProModal({ open, onClose }: { open: boolean; onClose: () => void
         </div>
 
         <p className="mt-1 text-[13px] text-muted">
-          Layouts for teams that present type systems to clients — all unlocked in the sidebar.
+          Layouts for teams that present type systems to clients
+          {isProUnlocked() ? " — all unlocked in the sidebar." : "."}
         </p>
 
         <ul className="mt-4 space-y-2.5">
@@ -67,13 +70,11 @@ export function ProModal({ open, onClose }: { open: boolean; onClose: () => void
         </ul>
 
         <div className="mt-5 rounded-md bg-surface px-3.5 py-3 text-[12px] leading-relaxed text-muted">
-          There&apos;s nothing to buy — TypeSmith is free while in beta and every Pro layout above
-          is already usable, no account required. Paid plans may come later; check the Docs link in
-          the sidebar for progress.
+          {PRO_STATUS_NOTICE}
         </div>
 
         <Button className="mt-5 h-10 w-full" onClick={onClose}>
-          Got it
+          {isProUnlocked() ? "Got it" : "Close"}
         </Button>
       </div>
     </div>

@@ -7,6 +7,7 @@ import { decodeStateCompat } from "@/lib/share";
 import { ensureGoogleFont, gfFamilyFromId } from "@/lib/googleFonts";
 import { pickProjectState } from "@/lib/store";
 import { useWorkspace } from "@/lib/workspace";
+import { isProLayout, isProUnlocked, PRO_STATUS_NOTICE } from "@/lib/pro";
 import { Sidebar } from "@/components/editor/Sidebar";
 import { Toolbar } from "@/components/editor/Toolbar";
 import { ExportModal } from "@/components/editor/ExportModal";
@@ -114,6 +115,11 @@ function EditorInner() {
   // content-editing controls) alongside it.
   const showMockupRail = ["website", "mobile", "slides", "social", "newsletter"].includes(tool);
 
+  // Post-beta safety net: a Pro layout can still be the active tool from a
+  // restored session or a share link even though the sidebar now gates it.
+  // While PRO_BETA_FREE this is always false. (lib/pro.ts)
+  const proLocked = isProLayout(tool) && !isProUnlocked();
+
   return (
     <div className="flex h-screen flex-col bg-surface print-expand print:block print:bg-white">
       <Toolbar
@@ -127,7 +133,7 @@ function EditorInner() {
         {/* Sidebar: inline on md+, a drawer below (hamburger in the toolbar) */}
         {mode === "edit" && (
           <div className="hidden md:flex">
-            <Sidebar active={tool} onSelect={setTool} />
+            <Sidebar active={tool} onSelect={setTool} onUpgrade={() => setProOpen(true)} />
           </div>
         )}
         {mode === "edit" && drawerOpen && (
@@ -140,6 +146,10 @@ function EditorInner() {
                   setTool(t);
                   setDrawerOpen(false);
                 }}
+                onUpgrade={() => {
+                  setDrawerOpen(false);
+                  setProOpen(true);
+                }}
               />
             </div>
           </div>
@@ -150,14 +160,20 @@ function EditorInner() {
               re-mounts the canvas with the sheet-in reveal. Tool switches and
               the initial load stay instant. */}
           <div key={canvasKey} className={canvasKey > 0 ? "h-full sheet-in" : "h-full"}>
-            {tool === "type-scale" && <TypeScalePanel />}
-            {tool === "style-guide" && <StyleGuidePanel />}
-            {tool === "colors" && <ContrastPanel onGetCode={() => setExportOpen(true)} />}
-            {tool === "website" && <WebsiteMockup />}
-            {tool === "mobile" && <MobileMockup />}
-            {tool === "slides" && <SlidesPanel />}
-            {tool === "social" && <SocialPanel />}
-            {tool === "newsletter" && <NewsletterPanel />}
+            {proLocked ? (
+              <ProLocked onUpgrade={() => setProOpen(true)} />
+            ) : (
+              <>
+                {tool === "type-scale" && <TypeScalePanel />}
+                {tool === "style-guide" && <StyleGuidePanel />}
+                {tool === "colors" && <ContrastPanel onGetCode={() => setExportOpen(true)} />}
+                {tool === "website" && <WebsiteMockup />}
+                {tool === "mobile" && <MobileMockup />}
+                {tool === "slides" && <SlidesPanel />}
+                {tool === "social" && <SocialPanel />}
+                {tool === "newsletter" && <NewsletterPanel />}
+              </>
+            )}
           </div>
         </main>
 
@@ -165,6 +181,28 @@ function EditorInner() {
       </div>
       <ExportModal open={exportOpen} onClose={() => setExportOpen(false)} />
       <ProModal open={proOpen} onClose={() => setProOpen(false)} />
+    </div>
+  );
+}
+
+/** Shown in place of a Pro layout once the beta ends. Unreachable while
+ *  PRO_BETA_FREE is true. */
+function ProLocked({ onUpgrade }: { onUpgrade: () => void }) {
+  return (
+    <div className="grid h-full place-items-center p-6">
+      <div className="max-w-sm rounded-card border border-line bg-white p-6 text-center shadow-panel">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+          TypeSmith Pro
+        </p>
+        <h2 className="mt-1 text-[15px] font-semibold text-ink">This layout needs Pro</h2>
+        <p className="mt-2 text-[13px] leading-relaxed text-muted">{PRO_STATUS_NOTICE}</p>
+        <button
+          onClick={onUpgrade}
+          className="mt-5 h-10 w-full rounded-md bg-brand-600 text-[13px] font-medium text-white hover:bg-brand-700"
+        >
+          See what&apos;s in Pro
+        </button>
+      </div>
     </div>
   );
 }

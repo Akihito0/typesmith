@@ -78,3 +78,56 @@ jobs:
           name: playwright-report
           path: playwright-report
           retention-days: 7
+
+  visual:
+    name: Visual regression
+    runs-on: ubuntu-latest
+    needs: checks
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # Baselines are committed by the visual-baselines workflow. Until that
+      # has been run once there is nothing to compare against, so skip rather
+      # than fail — a first run would otherwise "pass" by writing its own
+      # baselines, which proves nothing.
+      - name: Look for committed baselines
+        id: baselines
+        run: |
+          if [ -d e2e/__screenshots__ ] && [ -n "$(ls -A e2e/__screenshots__)" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No screenshot baselines yet — run the 'Visual baselines' workflow to create them."
+          fi
+
+      - name: Install dependencies
+        if: steps.baselines.outputs.found == 'true'
+        run: npm ci
+
+      - name: Download build
+        if: steps.baselines.outputs.found == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next
+
+      - name: Install Playwright browser
+        if: steps.baselines.outputs.found == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Compare against baselines
+        if: steps.baselines.outputs.found == 'true'
+        run: npm run test:visual
+
+      - name: Upload visual diff report
+        if: failure() && steps.baselines.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-visual-report
+          path: playwright-report
+          retention-days: 7

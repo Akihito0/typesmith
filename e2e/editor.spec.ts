@@ -185,3 +185,33 @@ test("slides offer a present button and newsletter a html download", async ({ pa
   await page.getByRole("button", { name: "Newsletter" }).click();
   await expect(page.getByRole("button", { name: "Download email HTML" })).toBeVisible();
 });
+
+test("share opens a sheet with a scannable QR and the link", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.getByRole("button", { name: "Share" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Share this project" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("img", { name: /QR code/i })).toBeVisible();
+  await expect(dialog.getByLabel("Share link")).toHaveValue(/\/editor\?s=/);
+  await expect(dialog.getByRole("button", { name: "Download QR" })).toBeEnabled();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+});
+
+test("style guide exports a PNG", async ({ page }) => {
+  await page.getByRole("button", { name: "Style Guide" }).click();
+  const downloading = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PNG" }).click();
+  const download = await downloading;
+  expect(download.suggestedFilename()).toMatch(/-styleguide\.png$/);
+});
+
+test("social artboards export PNGs at full resolution", async ({ page }) => {
+  await page.getByRole("button", { name: "Social" }).click();
+  const downloading = page.waitForEvent("download");
+  await page.getByRole("button", { name: /Square post/ }).click();
+  const download = await downloading;
+  expect(download.suggestedFilename()).toMatch(/-post\.png$/);
+});

@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useProject } from "@/lib/store";
 import { PRESETS, presetByName, randomPreset } from "@/lib/presets";
 import { buildShareUrl } from "@/lib/share";
+import { isProUnlocked } from "@/lib/pro";
 import { FontPicker } from "./FontPicker";
+import { ShareModal } from "./ShareModal";
 import { Button, Check, Chevron, Logo, Redo, Select, Shuffle, Undo } from "@/components/ui";
 import type { ToolId } from "./types";
 import { LAYOUTS } from "./Sidebar";
@@ -25,6 +27,8 @@ export function Toolbar({
 }) {
   const project = useProject();
   const [copied, setCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
 
   // Derived, not stored: the select reads "Custom" the moment fonts/size/ratio
   // drift from a preset (and undo/redo keeps it truthful too).
@@ -45,16 +49,20 @@ export function Toolbar({
     project.applyPreset(randomPreset(activePreset?.name));
   };
 
+  // Copy first (that's the one-click case people want), then open the panel
+  // with the QR for getting the project onto a phone.
   const share = async () => {
     const url = await buildShareUrl(project);
+    setShareUrl(url);
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch {
-      // Clipboard blocked (permissions) — show the URL for manual copy.
-      window.prompt("Copy your share link:", url);
+      // Clipboard blocked (permissions) — the panel shows the URL to copy by
+      // hand, so there's nothing to recover from here.
     }
+    setShareOpen(true);
   };
 
   return (
@@ -79,7 +87,7 @@ export function Toolbar({
         <Logo className="text-sm" />
       </Link>
 
-      <EditViewControl activeTool={activeTool} onSelectTool={onSelectTool} />
+      <EditViewControl activeTool={activeTool} onSelectTool={onSelectTool} onUpgrade={onUpgrade} />
 
       <div className="mx-2 h-6 w-px bg-line" />
 
@@ -191,6 +199,8 @@ export function Toolbar({
           Upgrade to Pro
         </Button>
       </div>
+
+      <ShareModal open={shareOpen} url={shareUrl} onClose={() => setShareOpen(false)} />
     </div>
   );
 }
@@ -374,9 +384,11 @@ function SaveIndicator() {
 function EditViewControl({
   activeTool,
   onSelectTool,
+  onUpgrade,
 }: {
   activeTool: ToolId;
   onSelectTool: (t: ToolId) => void;
+  onUpgrade: () => void;
 }) {
   const project = useProject();
   const mode = project.mode;
@@ -447,9 +459,15 @@ function EditViewControl({
                 key={item.id}
                 type="button"
                 onClick={() => {
+                  setViewOpen(false);
+                  // Same gate as the sidebar: free during the beta, upgrade
+                  // modal after it (see lib/pro.ts).
+                  if (item.pro && !isProUnlocked()) {
+                    onUpgrade();
+                    return;
+                  }
                   project.set("mode", "view");
                   onSelectTool(item.id);
-                  setViewOpen(false);
                 }}
                 className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[13px] transition-colors ${
                   activeTool === item.id && mode === "view"

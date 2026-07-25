@@ -5,6 +5,7 @@ import { useProject } from "@/lib/store";
 import { fontById } from "@/lib/fonts";
 import { buildScale } from "@/lib/scale";
 import { generateEmailHtml } from "@/lib/emailExport";
+import { ARTBOARDS, downloadArtboard, type Artboard } from "@/lib/imageExport";
 import { readableInk } from "./MockupPanel";
 
 // The three Pro-badged layouts (free during the beta). Like the Website and
@@ -24,6 +25,46 @@ function useDesign() {
     px: (label: string, fallback: number) => scale.find((s) => s.label === label)?.px ?? fallback,
     ink: readableInk(p.background),
   };
+}
+
+/**
+ * Export strip above the artboards. The PNGs are drawn on a canvas at full
+ * social resolution (lib/imageExport.ts), not scraped from the previews below
+ * — those are scaled-down browser chrome, not the deliverable.
+ */
+function ArtboardDownloads({ boards }: { boards: Artboard[] }) {
+  const p = useProject();
+  const [busy, setBusy] = useState<Artboard | null>(null);
+
+  const download = async (board: Artboard) => {
+    setBusy(board);
+    try {
+      await downloadArtboard(p, board);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="mb-4 flex shrink-0 flex-wrap items-center justify-center gap-2 px-6">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+        Download PNG
+      </span>
+      {boards.map((board) => (
+        <button
+          key={board}
+          onClick={() => download(board)}
+          disabled={busy !== null}
+          className="rounded-md border border-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink hover:bg-surface disabled:opacity-50"
+        >
+          {busy === board ? "Rendering…" : ARTBOARDS[board].label}
+          <span className="ml-1.5 text-muted">
+            {ARTBOARDS[board].width}×{ARTBOARDS[board].height}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function initials(name: string): string {
@@ -208,7 +249,8 @@ export function SocialPanel() {
     // Outer scrolls; the inner cluster uses m-auto so it sits in the middle of
     // the canvas when it fits and degrades to top-aligned scrolling (never
     // clipped) when the viewport is short.
-    <div className="flex h-full overflow-auto py-6 ts-scroll">
+    <div className="flex h-full flex-col overflow-auto py-6 ts-scroll">
+      <ArtboardDownloads boards={["post", "card", "story"]} />
       <div className="m-auto flex flex-wrap items-center justify-center gap-6 px-6">
         {/* square post */}
         <div className="w-[340px] overflow-hidden rounded-xl border border-line bg-white shadow-panel">

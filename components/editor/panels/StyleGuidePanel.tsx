@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useProject } from "@/lib/store";
 import { buildScale, toUnit } from "@/lib/scale";
 import { fontById } from "@/lib/fonts";
 import { evaluateContrast, formatRatio } from "@/lib/contrast";
+import { downloadArtboard } from "@/lib/imageExport";
 
 // "Style Guide" in the sidebar: the presentable, client-facing summary of the
 // whole system — fonts, scale ramp, colors, contrast verdict. This is the
@@ -18,6 +19,18 @@ export function StyleGuidePanel() {
   const heading = fontById(p.headingFont);
   const body = fontById(p.bodyFont);
   const contrast = evaluateContrast(p.foreground, p.background);
+
+  // PNG is drawn on a canvas (lib/imageExport.ts) rather than rasterising this
+  // DOM — no html-to-image dependency, and the real webfonts come through.
+  const [busy, setBusy] = useState(false);
+  const downloadPng = async () => {
+    setBusy(true);
+    try {
+      await downloadArtboard(p, "styleguide");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     // h-full is load-bearing: the parent <main> is overflow-hidden, so without
@@ -38,12 +51,21 @@ export function StyleGuidePanel() {
             </h2>
             <p className="mt-1 text-sm text-muted">by {p.author}</p>
           </div>
-          <button
-            onClick={() => window.print()}
-            className="rounded-md border border-line px-2.5 py-1 text-[11px] font-medium text-ink hover:bg-surface print:hidden"
-          >
-            Download PDF
-          </button>
+          <div className="flex shrink-0 gap-1.5 print:hidden">
+            <button
+              onClick={() => window.print()}
+              className="rounded-md border border-line px-2.5 py-1 text-[11px] font-medium text-ink hover:bg-surface"
+            >
+              Download PDF
+            </button>
+            <button
+              onClick={downloadPng}
+              disabled={busy}
+              className="rounded-md border border-line px-2.5 py-1 text-[11px] font-medium text-ink hover:bg-surface disabled:opacity-50"
+            >
+              {busy ? "Rendering…" : "Download PNG"}
+            </button>
+          </div>
         </div>
       </section>
 

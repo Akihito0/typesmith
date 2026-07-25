@@ -13,10 +13,33 @@ export default defineConfig({
     baseURL: "http://localhost:3100",
     trace: "on-first-retry",
   },
+  // Screenshot baselines are platform-specific and are generated on Linux by
+  // the visual-baselines workflow — never from a developer's macOS machine.
+  // Dropping the platform suffix keeps that explicit: there is exactly one set
+  // of baselines and it belongs to CI.
+  snapshotPathTemplate: "e2e/__screenshots__/{testFileName}/{arg}{ext}",
+  expect: {
+    toHaveScreenshot: {
+      // Font rasterisation and webfont timing move a few pixels around even on
+      // a fixed platform; this catches layout regressions, not sub-pixel noise.
+      maxDiffPixelRatio: 0.02,
+      animations: "disabled",
+      caret: "hide",
+    },
+  },
   projects: [
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      testIgnore: /visual\.spec\.ts/,
+    },
+    {
+      // Opt-in via `npm run test:visual` — `npm run test:e2e` pins itself to
+      // the chromium project so a missing or stale baseline can never block
+      // the functional suite.
+      name: "visual",
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+      testMatch: /visual\.spec\.ts/,
     },
   ],
   webServer: {

@@ -12,6 +12,29 @@ type Release = { version: string; date: string; note?: string; changes: Change[]
 // Newest first. Versions track package.json; the note flags milestone builds.
 const RELEASES: Release[] = [
   {
+    version: "1.0.0",
+    date: "25 Jul 2026",
+    note: "1.0",
+    changes: [
+      {
+        tag: "Added",
+        text: "Share sheet with a scannable QR code — point a phone at it to open the project and check the type on a real screen.",
+      },
+      {
+        tag: "Added",
+        text: "PNG export for the style guide and the social artboards, rendered at full resolution in the real project faces.",
+      },
+      {
+        tag: "Changed",
+        text: "Pro layouts stay unlocked for everyone during the beta; they become a paid plan when TypeSmith leaves beta.",
+      },
+      {
+        tag: "Added",
+        text: "Visual regression baselines in CI, so a layout change can't slip through unnoticed.",
+      },
+    ],
+  },
+  {
     version: "0.9.0",
     date: "19 Jul 2026",
     note: "Beta",
