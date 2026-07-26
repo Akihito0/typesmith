@@ -46,7 +46,7 @@ jobs:
         run: npm run test:visual -- --update-snapshots
 
       - name: Open a PR with the new baselines
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: chore/visual-baselines
           title: "chore: refresh visual regression baselines"
