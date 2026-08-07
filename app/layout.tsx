@@ -2,19 +2,26 @@ import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { GOOGLE_FONTS_HREF } from "@/lib/fonts";
+import { absoluteUrl, SITE_ORIGIN } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  // Origin only — Next adds the basePath itself when it resolves og:image.
+  metadataBase: new URL(SITE_ORIGIN),
   title: "TypeSmith — Precision typography and UI design, in one tool",
   description:
     "Generate type scales, check WCAG contrast, pair fonts, and preview real-world mockups instantly. Free, no signup, shareable by link.",
+  // The landing page is a client component and can't export metadata, so "/"
+  // is canonicalised here. Routes with their own metadata override this;
+  // /editor does it from app/editor/layout.tsx.
+  alternates: { canonical: absoluteUrl("/") },
   openGraph: {
     title: "TypeSmith — Precision typography and UI design, in one tool",
     description:
       "Generate type scales, check WCAG contrast, pair fonts, and preview real-world mockups instantly. Free, no signup, shareable by link.",
     siteName: "TypeSmith",
     type: "website",
+    url: absoluteUrl("/"),
   },
   twitter: {
     card: "summary_large_image",

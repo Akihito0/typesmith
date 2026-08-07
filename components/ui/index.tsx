@@ -114,13 +114,20 @@ export function Chevron({ className = "" }: { className?: string }) {
   );
 }
 
-export function Logo({ className = "" }: { className?: string }) {
+export function Logo({
+  className = "",
+  wordClassName = "",
+}: {
+  className?: string;
+  /** Lets tight bars (the editor toolbar on a phone) drop to the mark alone. */
+  wordClassName?: string;
+}) {
   return (
     <span className={`inline-flex items-center gap-2 font-semibold ${className}`}>
       <span className="grid h-6 w-6 place-items-center rounded-md bg-brand-600 text-white text-[13px] font-bold">
         T
       </span>
-      <span>TypeSmith</span>
+      <span className={wordClassName}>TypeSmith</span>
     </span>
   );
 }

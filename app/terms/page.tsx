@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { DocChrome, DocHeader, DocBody, DocSection } from "@/components/landing/DocChrome";
+import { pageUrlMetadata } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Terms — TypeSmith",
   description:
     "The terms of use for TypeSmith — a free, no-signup typography tool provided as-is during beta.",
+  ...pageUrlMetadata("/terms"),
 };
 
 export default function TermsPage() {

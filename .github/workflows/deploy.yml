@@ -38,6 +38,20 @@ jobs:
         env:
           GITHUB_PAGES: "true"
           NEXT_PUBLIC_BASE_PATH: /typesmith
+          # Without this, metadataBase falls back to localhost and every
+          # og:image / canonical URL in the published site points at
+          # http://localhost:3000 — social previews break silently.
+          # Origin only, no path: lib/site.ts explains why.
+          NEXT_PUBLIC_SITE_URL: https://${{ github.repository_owner }}.github.io
+
+      - name: Verify the published URLs are absolute
+        run: |
+          if grep -q "localhost:3000" out/index.html; then
+            echo "::error::Built HTML still references localhost — NEXT_PUBLIC_SITE_URL didn't apply."
+            grep -o 'content="http://localhost:3000[^"]*"' out/index.html | head -5
+            exit 1
+          fi
+          test -f out/sitemap.xml && test -f out/robots.txt
 
       - name: Verify export output
         run: test -f out/index.html && test -f out/editor.html

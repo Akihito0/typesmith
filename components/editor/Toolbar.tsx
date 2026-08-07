@@ -12,6 +12,26 @@ import { Button, Check, Chevron, Logo, Redo, Select, Shuffle, Undo } from "@/com
 import type { ToolId } from "./types";
 import { LAYOUTS } from "./Sidebar";
 
+/**
+ * Derived, not stored: the preset select reads "Custom" the moment fonts, size,
+ * or ratio drift from a preset (and undo/redo keeps that truthful). Shared by
+ * the wide toolbar and the collapsed "Aa" menu.
+ */
+function activePresetFor(project: {
+  headingFont: string;
+  bodyFont: string;
+  base: number;
+  ratio: number;
+}) {
+  return PRESETS.find(
+    (p) =>
+      p.heading === project.headingFont &&
+      p.body === project.bodyFont &&
+      p.base === project.base &&
+      p.ratio === project.ratio
+  );
+}
+
 export function Toolbar({
   onExport,
   onUpgrade,
@@ -30,15 +50,7 @@ export function Toolbar({
   const [shareOpen, setShareOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
 
-  // Derived, not stored: the select reads "Custom" the moment fonts/size/ratio
-  // drift from a preset (and undo/redo keeps it truthful too).
-  const activePreset = PRESETS.find(
-    (p) =>
-      p.heading === project.headingFont &&
-      p.body === project.bodyFont &&
-      p.base === project.base &&
-      p.ratio === project.ratio
-  );
+  const activePreset = activePresetFor(project);
 
   const applyPresetByName = (name: string) => {
     const p = presetByName(name);
@@ -66,7 +78,11 @@ export function Toolbar({
   };
 
   return (
-    <div className="flex h-14 items-center gap-3 border-b border-line bg-white px-4 print:hidden">
+    // Wraps to a second row below md. On a 390px phone this bar used to run
+    // ~1044px wide, pushing Share / Export / Upgrade off-screen and scrolling
+    // the whole page sideways — which mattered more once the QR flow started
+    // sending people here from their phones.
+    <div className="flex min-h-14 flex-wrap items-center gap-x-2 gap-y-2 border-b border-line bg-white px-3 py-2 print:hidden md:h-14 md:flex-nowrap md:gap-x-3 md:px-4 md:py-0">
       {onMenu && (
         <button
           onClick={onMenu}
@@ -83,8 +99,8 @@ export function Toolbar({
           </svg>
         </button>
       )}
-      <Link href="/" className="shrink-0">
-        <Logo className="text-sm" />
+      <Link href="/" className="shrink-0" aria-label="TypeSmith home">
+        <Logo className="text-sm" wordClassName="hidden sm:inline" />
       </Link>
 
       <EditViewControl activeTool={activeTool} onSelectTool={onSelectTool} onUpgrade={onUpgrade} />
@@ -113,10 +129,10 @@ export function Toolbar({
         </button>
       </div>
 
-      <div className="mx-2 h-6 w-px bg-line" />
+      <div className="mx-2 hidden h-6 w-px bg-line lg:block" />
 
-      {/* Presets */}
-      <div className="flex items-center gap-1.5">
+      {/* Presets — below lg they live in the collapsed "Aa" type menu */}
+      <div className="hidden items-center gap-1.5 lg:flex">
         <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
           Presets:
         </span>
@@ -188,14 +204,18 @@ export function Toolbar({
       <TypeMenu />
 
       <div className="ml-auto flex items-center gap-2">
-        <SaveIndicator />
+        {/* Decorative confirmation — autosave still runs when it's hidden. */}
+        <span className="hidden sm:inline-flex">
+          <SaveIndicator />
+        </span>
         <Button variant="outline" className="h-8 px-3 text-xs" onClick={share}>
           {copied ? "Link copied" : "Share"}
         </Button>
         <Button variant="outline" className="h-8 px-3 text-xs" onClick={onExport}>
           Export
         </Button>
-        <Button className="h-8 px-3 text-xs" onClick={onUpgrade}>
+        {/* On a phone this lives in the sidebar drawer footer instead. */}
+        <Button className="hidden h-8 px-3 text-xs sm:inline-flex" onClick={onUpgrade}>
           Upgrade to Pro
         </Button>
       </div>
@@ -270,6 +290,7 @@ function SizeRatioInputs() {
 // popover so nothing becomes unreachable.
 function TypeMenu() {
   const project = useProject();
+  const activePreset = activePresetFor(project);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -301,6 +322,44 @@ function TypeMenu() {
 
       {open && (
         <div className="absolute left-0 top-10 z-40 w-72 space-y-3 rounded-lg border border-line bg-white p-3 shadow-modal">
+          {/* Presets are only in the toolbar proper from lg up, so they need a
+              home here or they're unreachable on a narrow screen. */}
+          <div className="flex items-end gap-2 lg:hidden">
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+                Preset
+              </span>
+              <Select
+                value={activePreset?.name ?? "__custom"}
+                onChange={(e) => {
+                  const p = presetByName(e.target.value);
+                  if (p) project.applyPreset(p);
+                }}
+                className="mt-1 w-full"
+                aria-label="Pairing preset"
+              >
+                {!activePreset && (
+                  <option value="__custom" disabled>
+                    Custom
+                  </option>
+                )}
+                {PRESETS.map((p) => (
+                  <option key={p.name} value={p.name}>
+                    {p.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <button
+              onClick={() => project.applyPreset(randomPreset(activePreset?.name))}
+              title="Shuffle pairing"
+              aria-label="Shuffle pairing"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-line text-muted hover:bg-surface hover:text-ink"
+            >
+              <Shuffle />
+            </button>
+          </div>
+
           <div className="flex items-end gap-2">
             <div className="min-w-0 flex-1">
               <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">

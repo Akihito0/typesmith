@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { DocChrome, DocHeader, DocBody, DocSection } from "@/components/landing/DocChrome";
+import { pageUrlMetadata } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy — TypeSmith",
   description:
     "TypeSmith runs entirely in your browser. No account, no server, no tracking — here is exactly what that means.",
+  ...pageUrlMetadata("/privacy"),
 };
 
 export default function PrivacyPage() {

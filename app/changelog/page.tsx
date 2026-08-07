@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { DocChrome, DocHeader } from "@/components/landing/DocChrome";
+import { pageUrlMetadata } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Changelog — TypeSmith",
   description: "What has shipped in TypeSmith, newest first.",
+  ...pageUrlMetadata("/changelog"),
 };
 
 type Change = { tag: "Added" | "Changed" | "Fixed"; text: string };

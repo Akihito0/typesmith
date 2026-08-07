@@ -215,3 +215,37 @@ test("social artboards export PNGs at full resolution", async ({ page }) => {
   const download = await downloading;
   expect(download.suggestedFilename()).toMatch(/-post\.png$/);
 });
+
+// Regression guard: the toolbar used to run ~1044px wide, which scrolled the
+// whole editor sideways on a phone and put Share / Export out of reach.
+test.describe("phone-sized editor", () => {
+  test("does not scroll sideways", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/editor");
+    await expect(page.getByText("Type Scale Generator")).toBeVisible();
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+
+  test("keeps every core action reachable", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/editor");
+
+    for (const name of ["Share", "Export", "Undo", "Redo", "Type settings"]) {
+      await expect(page.getByRole("button", { name, exact: true })).toBeInViewport();
+    }
+
+    // Presets moved into the "Aa" menu at this width. With the menu open the
+    // toolbar's own select is also in the DOM (display:none below lg), so take
+    // the later one — the menu renders after the toolbar group.
+    await page.getByRole("button", { name: "Type settings" }).click();
+    await expect(page.getByLabel("Pairing preset").last()).toBeInViewport();
+
+    // Upgrade moved into the sidebar drawer.
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    await expect(page.getByRole("button", { name: "Upgrade to Pro" })).toBeInViewport();
+  });
+});

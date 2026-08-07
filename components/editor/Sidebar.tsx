@@ -322,6 +322,13 @@ export function Sidebar({
         <Button variant="dark" className="w-full h-8 text-xs" onClick={newAsset}>
           {justCreated ? <span className="swap-in">Created -&gt;</span> : "+ New Asset"}
         </Button>
+        {/* The toolbar drops its Upgrade button below sm, so the drawer keeps
+            Pro reachable on a phone. */}
+        {onUpgrade && (
+          <Button className="mt-2 h-8 w-full text-xs sm:hidden" onClick={onUpgrade}>
+            Upgrade to Pro
+          </Button>
+        )}
         <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-muted">
           <a
             href={DOCS_URL}
