@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { ProjectState } from "./store";
+import { normalizeProjectState, type ProjectState } from "./store";
 
 // Multi-project workspace: a localStorage registry of project snapshots.
 // The *active* project still lives in the main project store (and its own
@@ -35,6 +35,13 @@ export function newProjectId(): string {
     : `p-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function normalizeEntries(entries: WorkspaceEntry[] | undefined): WorkspaceEntry[] {
+  if (!Array.isArray(entries)) return [];
+  return entries
+    .filter((entry) => entry && typeof entry.id === "string" && entry.state)
+    .map((entry) => ({ ...entry, state: normalizeProjectState(entry.state) }));
+}
+
 export const useWorkspace = create<WorkspaceStore>()(
   persist(
     (set) => ({
@@ -65,9 +72,7 @@ export const useWorkspace = create<WorkspaceStore>()(
       importAll: (entries) =>
         set((s) => {
           const byId = new Map(s.projects.map((p) => [p.id, p]));
-          for (const e of entries) {
-            if (!e || typeof e.id !== "string" || typeof e.state !== "object" || e.state === null)
-              continue;
+          for (const e of normalizeEntries(entries)) {
             const existing = byId.get(e.id);
             const updatedAt = typeof e.updatedAt === "number" ? e.updatedAt : Date.now();
             if (!existing || updatedAt > existing.updatedAt) {
@@ -79,7 +84,15 @@ export const useWorkspace = create<WorkspaceStore>()(
     }),
     {
       name: "typesmith-workspace",
-      version: 1,
+      version: 2,
+      migrate: (persisted) => {
+        const state = (persisted ?? {}) as Partial<WorkspaceStore>;
+        return { ...state, projects: normalizeEntries(state.projects) };
+      },
+      merge: (persisted, current) => {
+        const state = (persisted ?? {}) as Partial<WorkspaceStore>;
+        return { ...current, ...state, projects: normalizeEntries(state.projects) };
+      },
       // Manual rehydration alongside the project store (app/editor/page.tsx)
       // to avoid SSR hydration mismatches.
       skipHydration: true,

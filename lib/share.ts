@@ -33,6 +33,7 @@ const KEY_MAP: Record<keyof ProjectState, string> = {
   headline: "hl",
   subhead: "sh",
   body: "bd",
+  playground: "pg",
   mode: "md",
 };
 
