@@ -1,6 +1,7 @@
 export type ToolId =
   | "style-guide"
   | "type-scale"
+  | "playground"
   | "colors"
   | "website"
   | "mobile"

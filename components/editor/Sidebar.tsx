@@ -16,6 +16,7 @@ const DOCS_URL = "https://github.com/Akihito0/typesmith#readme";
 const DESIGN_SYSTEM: { id: ToolId; label: string }[] = [
   { id: "style-guide", label: "Style Guide" },
   { id: "type-scale", label: "Type Scale" },
+  { id: "playground", label: "Playground" },
   { id: "colors", label: "Colors" },
 ];
 

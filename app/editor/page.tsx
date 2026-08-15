@@ -21,6 +21,7 @@ import {
 import { SlidesPanel, SocialPanel, NewsletterPanel } from "@/components/editor/panels/ProLayouts";
 import { ContrastPanel } from "@/components/editor/panels/ContrastPanel";
 import { StyleGuidePanel } from "@/components/editor/panels/StyleGuidePanel";
+import { PlaygroundPanel } from "@/components/editor/panels/PlaygroundPanel";
 import type { ToolId } from "@/components/editor/types";
 
 function EditorInner() {
@@ -165,6 +166,7 @@ function EditorInner() {
             ) : (
               <>
                 {tool === "type-scale" && <TypeScalePanel />}
+                {tool === "playground" && <PlaygroundPanel />}
                 {tool === "style-guide" && <StyleGuidePanel />}
                 {tool === "colors" && <ContrastPanel onGetCode={() => setExportOpen(true)} />}
                 {tool === "website" && <WebsiteMockup />}

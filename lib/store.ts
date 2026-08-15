@@ -4,10 +4,11 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Unit, StepOverrides } from "./scale";
 import { PRESETS, type Preset } from "./presets";
+import { DEFAULT_PLAYGROUND, normalizePlayground, type PlaygroundDocument } from "./playground";
 
 // The whole project is one state object. Type scale, fonts, colors, mockups,
-// and exports all read from here — no per-tool re-entry. This is the shape that
-// gets encoded into a shareable URL.
+// the playground, and exports all read from here — no per-tool re-entry. This
+// is the shape that gets encoded into a shareable URL.
 export interface ProjectState {
   projectName: string;
   author: string;
@@ -49,12 +50,17 @@ export interface ProjectState {
   subhead: string;
   body: string;
 
+  // Freeform type canvas
+  playground: PlaygroundDocument;
+
   // UI mode
   mode: "edit" | "view";
 }
 
 export interface ProjectActions {
   set: <K extends keyof ProjectState>(key: K, value: ProjectState[K]) => void;
+  /** Commit a playground change; coalescing is useful for inspector input bursts. */
+  setPlayground: (document: PlaygroundDocument, coalesce?: boolean) => void;
   /** Set (px) or clear (null) a per-step size override. */
   setStepOverride: (step: number, px: number | null) => void;
   applyPreset: (p: Preset) => void;
@@ -103,6 +109,8 @@ const DEFAULT: ProjectState = {
   subhead: "Architecting Digital Precision",
   body: "The ultimate tool for developers and designers to craft perfectly scaled, accessible, and performant type systems for any digital interface.",
 
+  playground: DEFAULT_PLAYGROUND,
+
   mode: "edit",
 };
 
@@ -123,8 +131,18 @@ function snapshot(s: ProjectState): ProjectState {
   return out as ProjectState;
 }
 
+/** Fill newly-added fields and sanitize the nested canvas when loading old or
+ * imported project data. */
+export function normalizeProjectState(partial: Partial<ProjectState>): ProjectState {
+  return {
+    ...DEFAULT,
+    ...partial,
+    playground: normalizePlayground(partial.playground),
+  };
+}
+
 /** Public snapshot of just the project fields (no history/actions) — used by
- *  the workspace registry (lib/workspace.ts). */
+ * the workspace registry (lib/workspace.ts). */
 export function pickProjectState(s: ProjectState): ProjectState {
   return snapshot(s);
 }
@@ -155,6 +173,20 @@ export const useProject = create<Store>()(
           } as Partial<Store>;
         }),
 
+      setPlayground: (playground, allowCoalesce = false) =>
+        set((s) => {
+          const now = Date.now();
+          const coalesce =
+            allowCoalesce && lastEditKey === "playground" && now - lastEditAt < COALESCE_MS;
+          lastEditKey = "playground";
+          lastEditAt = now;
+          return {
+            playground,
+            future: [],
+            ...(coalesce ? {} : { past: pushPast(s) }),
+          };
+        }),
+
       setStepOverride: (step, px) =>
         set((s) => {
           lastEditKey = null;
@@ -178,8 +210,9 @@ export const useProject = create<Store>()(
           };
         }),
 
-      // Used for share-link (?s=) loads — replaces state without history.
-      hydrate: (partial) => set({ ...partial, past: [], future: [] }),
+      // Used for share-link (?s=), workspace, and backup loads. Normalize so
+      // projects created before the playground was introduced remain valid.
+      hydrate: (partial) => set({ ...normalizeProjectState(partial), past: [], future: [] }),
 
       reset: () =>
         set((s) => {
@@ -213,8 +246,13 @@ export const useProject = create<Store>()(
     }),
     {
       name: "typesmith-project",
-      version: 1,
+      version: 2,
       partialize: (s) => snapshot(s),
+      migrate: (persisted) => normalizeProjectState((persisted ?? {}) as Partial<ProjectState>),
+      merge: (persisted, current) => ({
+        ...current,
+        ...normalizeProjectState((persisted ?? {}) as Partial<ProjectState>),
+      }),
       // Rehydration is triggered manually in the editor so a ?s= share link
       // can take priority over the saved session (see app/editor/page.tsx).
       skipHydration: true,
