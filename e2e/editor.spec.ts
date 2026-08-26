@@ -249,3 +249,64 @@ test.describe("phone-sized editor", () => {
     await expect(page.getByRole("button", { name: "Upgrade to Pro" })).toBeInViewport();
   });
 });
+
+test.describe("playground", () => {
+  test("frames are drawn at whatever size the drag describes", async ({ page }) => {
+    await page.getByRole("button", { name: "Playground" }).click();
+    const canvas = page.getByTestId("playground-canvas");
+    await expect(canvas).toBeVisible();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error("The playground canvas has no layout box.");
+
+    await page.getByRole("button", { name: "Frame", exact: true }).click();
+    await page.mouse.move(box.x + 40, box.y + 40);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 260, box.y + 150, { steps: 12 });
+    await page.mouse.up();
+
+    // The new frame is selected, and its size came from the drag rather than
+    // from any preset in the list.
+    const width = page.getByLabel("Width");
+    const height = page.getByLabel("Height");
+    await expect(width).toBeVisible();
+    const drawnWidth = Number(await width.inputValue());
+    const drawnHeight = Number(await height.inputValue());
+    expect(drawnWidth).toBeGreaterThan(0);
+    expect(drawnHeight).toBeGreaterThan(0);
+    expect(drawnWidth).not.toBe(1200);
+    expect(drawnHeight).not.toBe(800);
+    await expect(page.getByText("3 frames")).toBeVisible();
+
+    // Any width is accepted, including one no preset offers.
+    await width.fill("137");
+    await width.blur();
+    await expect(page.getByLabel("Width")).toHaveValue("137");
+  });
+
+  test("a frame can be an ellipse with a corner radius on rectangles", async ({ page }) => {
+    await page.getByRole("button", { name: "Playground" }).click();
+    const canvas = page.getByTestId("playground-canvas");
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error("The playground canvas has no layout box.");
+
+    await page.getByRole("button", { name: "Ellipse", exact: true }).click();
+    await page.mouse.move(box.x + 60, box.y + 60);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 240, box.y + 240, { steps: 12 });
+    await page.mouse.up();
+
+    // Corner radius is meaningless for an ellipse, so the field is hidden.
+    await expect(page.getByLabel("Corner radius")).toBeHidden();
+    // The ellipse exports on its own, shape and all.
+    const download = page.waitForEvent("download");
+    await page.getByLabel("Export target").selectOption({ label: "Ellipse 3" });
+    await page.getByRole("button", { name: "PNG" }).click();
+    expect((await download).suggestedFilename()).toContain("ellipse-3");
+
+    await page.getByRole("button", { name: "Rectangle", exact: true }).click();
+    const radius = page.getByLabel("Corner radius");
+    await radius.fill("24");
+    await radius.blur();
+    await expect(page.getByLabel("Corner radius")).toHaveValue("24");
+  });
+});

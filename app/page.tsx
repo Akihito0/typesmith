@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Nav } from "@/components/landing/Nav";
-import { Hero } from "@/components/landing/Hero";
-import { Marquee, Features, Doctrine, Editions, Colophon } from "@/components/landing/Sections";
-import { AuthModal } from "@/components/landing/AuthModal";
-import { SmoothScroll } from "@/components/landing/SmoothScroll";
+import { Nav } from "@/frontend/landing/Nav";
+import { Hero } from "@/frontend/landing/Hero";
+import { Marquee, Features, Doctrine, Editions, Colophon } from "@/frontend/landing/Sections";
+import { AuthModal } from "@/frontend/landing/AuthModal";
+import { SmoothScroll } from "@/frontend/landing/SmoothScroll";
 
 // Page order — dark bookends around a light editorial middle, no scroll
 // hijacking, blueprint grid contained to the preview panel:
@@ -15,7 +15,7 @@ export default function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-canvas">
       {/* First screen: nav + hero + marquee fill exactly one viewport — the
           marquee rides the bottom edge and the light sections only appear on
           scroll. */}
@@ -25,9 +25,11 @@ export default function LandingPage() {
         <Hero />
         <Marquee />
       </div>
-      <Features />
-      <Doctrine />
-      <Editions onStart={() => setAuthOpen(true)} />
+      <div className="bg-white text-ink pb-12 md:pb-16">
+        <Features />
+        <Doctrine />
+        <Editions onStart={() => setAuthOpen(true)} />
+      </div>
       <Colophon />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
     </main>

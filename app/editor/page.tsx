@@ -2,27 +2,23 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useProject } from "@/lib/store";
-import { decodeStateCompat } from "@/lib/share";
-import { ensureGoogleFont, gfFamilyFromId } from "@/lib/googleFonts";
-import { pickProjectState } from "@/lib/store";
-import { useWorkspace } from "@/lib/workspace";
-import { isProLayout, isProUnlocked, PRO_STATUS_NOTICE } from "@/lib/pro";
-import { Sidebar } from "@/components/editor/Sidebar";
-import { Toolbar } from "@/components/editor/Toolbar";
-import { ExportModal } from "@/components/editor/ExportModal";
-import { ProModal } from "@/components/editor/ProModal";
-import { TypeScalePanel } from "@/components/editor/panels/TypeScalePanel";
-import {
-  WebsiteMockup,
-  MobileMockup,
-  MockupControls,
-} from "@/components/editor/panels/MockupPanel";
-import { SlidesPanel, SocialPanel, NewsletterPanel } from "@/components/editor/panels/ProLayouts";
-import { ContrastPanel } from "@/components/editor/panels/ContrastPanel";
-import { StyleGuidePanel } from "@/components/editor/panels/StyleGuidePanel";
-import { PlaygroundPanel } from "@/components/editor/panels/PlaygroundPanel";
-import type { ToolId } from "@/components/editor/types";
+import { useProject } from "@/backend/project/store";
+import { decodeStateCompat } from "@/backend/project/share";
+import { ensureGoogleFont, gfFamilyFromId } from "@/backend/fonts/google";
+import { pickProjectState } from "@/backend/project/store";
+import { useWorkspace } from "@/backend/project/workspace";
+import { isProLayout, isProUnlocked, PRO_STATUS_NOTICE } from "@/backend/project/pro";
+import { Sidebar } from "@/frontend/editor/Sidebar";
+import { Toolbar } from "@/frontend/editor/Toolbar";
+import { ExportModal } from "@/frontend/editor/ExportModal";
+import { ProModal } from "@/frontend/editor/ProModal";
+import { TypeScalePanel } from "@/frontend/editor/panels/TypeScalePanel";
+import { WebsiteMockup, MobileMockup, MockupControls } from "@/frontend/editor/panels/MockupPanel";
+import { SlidesPanel, SocialPanel, NewsletterPanel } from "@/frontend/editor/panels/ProLayouts";
+import { ContrastPanel } from "@/frontend/editor/panels/ContrastPanel";
+import { StyleGuidePanel } from "@/frontend/editor/panels/StyleGuidePanel";
+import { PlaygroundPanel } from "@/frontend/editor/panels/PlaygroundPanel";
+import type { ToolId } from "@/frontend/editor/types";
 
 function EditorInner() {
   const params = useSearchParams();

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { DocChrome, DocHeader } from "@/components/landing/DocChrome";
-import { pageUrlMetadata } from "@/lib/site";
+import { DocChrome, DocHeader } from "@/frontend/landing/DocChrome";
+import { pageUrlMetadata } from "@/backend/site";
 
 export const metadata: Metadata = {
   title: "Changelog — TypeSmith",

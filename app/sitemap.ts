@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { absoluteUrl, PUBLIC_ROUTES } from "@/lib/site";
+import { absoluteUrl, PUBLIC_ROUTES } from "@/backend/site";
 
 // Static export emits this as /sitemap.xml. URLs are absolute and include the
 // base path, so it stays correct whether the site is served from a sub-path

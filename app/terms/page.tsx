@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { DocChrome, DocHeader, DocBody, DocSection } from "@/components/landing/DocChrome";
-import { pageUrlMetadata } from "@/lib/site";
+import { DocChrome, DocHeader, DocBody, DocSection } from "@/frontend/landing/DocChrome";
+import { pageUrlMetadata } from "@/backend/site";
 
 export const metadata: Metadata = {
   title: "Terms — TypeSmith",

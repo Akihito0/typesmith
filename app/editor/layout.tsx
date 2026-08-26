@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { pageUrlMetadata } from "@/lib/site";
+import { pageUrlMetadata } from "@/backend/site";
 
 // The editor page itself is a client component, so its metadata lives here.
 // Without this the route inherits the landing page's canonical and tells search

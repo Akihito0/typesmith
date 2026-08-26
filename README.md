@@ -55,7 +55,7 @@ once under Settings → Pages → Source: GitHub Actions).
 | `npm run lint`          | ESLint (next/core-web-vitals)                   |
 | `npm run format:check`  | Prettier check (`format` to write)              |
 | `npm run typecheck`     | `tsc --noEmit`                                  |
-| `npm test`              | Vitest unit tests over `lib/`                   |
+| `npm test`              | Vitest unit tests over `backend/`               |
 | `npm run test:coverage` | Unit tests + coverage thresholds                |
 | `npm run test:e2e`      | Playwright suite (build first; serves on :3100) |
 
@@ -65,23 +65,37 @@ corrupts it.
 
 ## Architecture
 
+The tree splits in two, plus a thin routing shell:
+
+```
+backend/    logic and data — no React, no rendering   (see backend/README.md)
+frontend/   every component and the global stylesheet (see frontend/README.md)
+app/        Next.js routes; metadata in, components out
+```
+
+`app/` stays at the root because the App Router only discovers routes there.
+
 Everything hangs off one shared state object:
 
-- `lib/store.ts` — the `ProjectState` (zustand): fonts, scale, overrides,
-  weights, leading, colors, fluid bounds, mockup copy. Every panel, mockup,
-  and export reads from here. Undo/redo history lives alongside.
-- `lib/share.ts` — packs the whole state into a compressed base64url `?s=`
-  param. New state fields must be added to `KEY_MAP` or they silently drop
-  from share links.
-- `lib/scale.ts`, `lib/contrast.ts`, `lib/export.ts` — framework-free math
-  and code generation (modular + fluid scales, WCAG/APCA, six export
-  formats). Fully unit-tested.
-- `lib/workspace.ts` — the multi-project registry (localStorage).
-- `app/editor` + `components/editor/` — the tool; `app/page.tsx` +
-  `components/landing/` — the landing page, whose hero plays real editor
+- `backend/project/store.ts` — the `ProjectState` (zustand): fonts, scale,
+  overrides, weights, leading, colors, fluid bounds, mockup copy, the
+  playground document. Every panel, mockup, and export reads from here.
+  Undo/redo history lives alongside.
+- `backend/project/share.ts` — packs the whole state into a compressed
+  base64url `?s=` param. New state fields must be added to `KEY_MAP` or they
+  silently drop from share links.
+- `backend/typography/scale.ts`, `backend/color/contrast.ts`,
+  `backend/export/code.ts` — framework-free math and code generation (modular
+  - fluid scales, WCAG/APCA, six export formats). Fully unit-tested.
+- `backend/playground/document.ts` — the infinite-canvas model: frames of any
+  size, rectangles or ellipses, plus the draw and resize geometry.
+- `backend/project/workspace.ts` — the multi-project registry (localStorage).
+- `app/editor` + `frontend/editor/` — the tool; `app/page.tsx` +
+  `frontend/landing/` — the landing page, whose hero plays real editor
   screenshots back as a simulated working session.
 
-No backend, no database, no env vars, no accounts — by design.
+No server, no database, no env vars, no accounts — by design. "backend" is the
+logic layer, not a separate process.
 
 ## License
 

@@ -1,9 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { GOOGLE_FONTS_HREF } from "@/lib/fonts";
-import { absoluteUrl, SITE_ORIGIN } from "@/lib/site";
-import "./globals.css";
+import { GOOGLE_FONTS_HREF } from "@/backend/fonts/catalog";
+import { absoluteUrl, SITE_ORIGIN } from "@/backend/site";
+import "@/frontend/styles/globals.css";
+
+export const viewport: Viewport = {
+  themeColor: "#171717",
+};
 
 export const metadata: Metadata = {
   // Origin only — Next adds the basePath itself when it resolves og:image.
@@ -30,14 +34,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} bg-canvas`}>
       <head>
         {/* Preload connection + the curated preview faces */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="stylesheet" href={GOOGLE_FONTS_HREF} />
       </head>
-      <body className="bg-white text-ink antialiased">{children}</body>
+      <body className="bg-canvas text-ink antialiased">{children}</body>
     </html>
   );
 }
