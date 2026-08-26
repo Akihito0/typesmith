@@ -71,9 +71,14 @@ The tree splits in two, plus a thin routing shell:
 backend/    logic and data — no React, no rendering   (see backend/README.md)
 frontend/   every component and the global stylesheet (see frontend/README.md)
 app/        Next.js routes; metadata in, components out
+config/     tooling config that need not sit at the root (see config/README.md)
+e2e/        Playwright specs (unit tests live beside the code in backend/)
+public/     static assets served at /
 ```
 
-`app/` stays at the root because the App Router only discovers routes there.
+`app/` and `public/` stay at the root because Next.js only looks for them
+there. So do `next.config.mjs`, `postcss.config.mjs`, `tsconfig.json`, and
+`.eslintrc.json` — `config/README.md` lists exactly why for each.
 
 Everything hangs off one shared state object:
 

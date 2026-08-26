@@ -1,5 +1,7 @@
 import type { Config } from "tailwindcss";
 
+// Content globs resolve from the working directory (the repo root, since
+// every entry point is an npm script) — not from this file.
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./frontend/**/*.{ts,tsx}", "./backend/**/*.{ts,tsx}"],
   theme: {
