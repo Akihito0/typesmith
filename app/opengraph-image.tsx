@@ -1,74 +1,16 @@
-import { ImageResponse } from "next/og";
+import {
+  OG_ALT,
+  OG_CONTENT_TYPE,
+  OG_SIZE,
+  renderOpengraphImage,
+} from "@/frontend/system/OpengraphImage";
 
-// Social share card, generated at build time. Colors mirror the app's canvas
-// (dark editor) and brand blue from tailwind.config.ts.
-export const alt = "TypeSmith — precision typography and UI design, in one tool";
-export const size = { width: 1200, height: 630 };
-export const contentType = "image/png";
+// Next reads alt/size/contentType off this route file itself, so the contract
+// stays here and only the artwork lives in frontend/.
+export const alt = OG_ALT;
+export const size = OG_SIZE;
+export const contentType = OG_CONTENT_TYPE;
 
 export default function OpengraphImage() {
-  return new ImageResponse(
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        padding: 80,
-        background: "#171717",
-        color: "#ffffff",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-        <div
-          style={{
-            width: 76,
-            height: 76,
-            borderRadius: 18,
-            background: "#2563eb",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 46,
-            fontWeight: 700,
-            color: "#ffffff",
-          }}
-        >
-          T
-        </div>
-        <div style={{ fontSize: 58, fontWeight: 700 }}>TypeSmith</div>
-      </div>
-
-      <div
-        style={{
-          marginTop: 36,
-          fontSize: 29,
-          color: "#9ca3af",
-          maxWidth: 880,
-          lineHeight: 1.45,
-        }}
-      >
-        Type scales, font pairing, WCAG contrast, and live mockups — free, no signup, shareable by
-        link.
-      </div>
-
-      <div
-        style={{
-          marginTop: 56,
-          display: "flex",
-          alignItems: "flex-end",
-          gap: 26,
-          color: "#4b5563",
-        }}
-      >
-        <div style={{ fontSize: 28 }}>Aa</div>
-        <div style={{ fontSize: 40, color: "#6b7280" }}>Aa</div>
-        <div style={{ fontSize: 56, color: "#9ca3af" }}>Aa</div>
-        <div style={{ fontSize: 76, color: "#e5e7eb" }}>Aa</div>
-        <div style={{ fontSize: 100, color: "#2563eb", fontWeight: 700 }}>Aa</div>
-      </div>
-    </div>,
-    { ...size }
-  );
+  return renderOpengraphImage();
 }

@@ -13,7 +13,7 @@ import { defineConfig, devices } from "@playwright/test";
 const repoRoot = path.resolve(__dirname, "..");
 
 export default defineConfig({
-  testDir: "../e2e",
+  testDir: "../frontend/e2e",
   outputDir: "../test-results",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -29,7 +29,7 @@ export default defineConfig({
   // the visual-baselines workflow — never from a developer's macOS machine.
   // Dropping the platform suffix keeps that explicit: there is exactly one set
   // of baselines and it belongs to CI.
-  snapshotPathTemplate: "../e2e/__screenshots__/{testFileName}/{arg}{ext}",
+  snapshotPathTemplate: "../frontend/e2e/__screenshots__/{testFileName}/{arg}{ext}",
   expect: {
     toHaveScreenshot: {
       // Font rasterisation and webfont timing move a few pixels around even on

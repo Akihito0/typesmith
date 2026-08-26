@@ -68,11 +68,10 @@ corrupts it.
 The tree splits in two, plus a thin routing shell:
 
 ```
-backend/    logic and data — no React, no rendering   (see backend/README.md)
-frontend/   every component and the global stylesheet (see frontend/README.md)
-app/        Next.js routes; metadata in, components out
-config/     tooling config that need not sit at the root (see config/README.md)
-e2e/        Playwright specs (unit tests live beside the code in backend/)
+backend/    logic and data — no React, no rendering    (see backend/README.md)
+frontend/   components, stylesheet, and e2e specs      (see frontend/README.md)
+app/        Next.js routes only — metadata in, one component out (~190 lines)
+config/     tooling config that needn't sit at the root (see config/README.md)
 public/     static assets served at /
 ```
 

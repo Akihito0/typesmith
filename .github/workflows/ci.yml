@@ -98,7 +98,7 @@ jobs:
       - name: Look for committed baselines
         id: baselines
         run: |
-          if [ -d e2e/__screenshots__ ] && [ -n "$(ls -A e2e/__screenshots__)" ]; then
+          if [ -d frontend/e2e/__screenshots__ ] && [ -n "$(ls -A frontend/e2e/__screenshots__)" ]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           else
             echo "found=false" >> "$GITHUB_OUTPUT"

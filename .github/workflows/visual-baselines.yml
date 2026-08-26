@@ -3,7 +3,7 @@ name: Visual baselines
 # Screenshot baselines have to be produced on the same platform that compares
 # them, and CI is Linux — a macOS dev machine physically cannot generate usable
 # ones. So this is the bootstrap (and the refresh) path: run it by hand, it
-# regenerates e2e/__screenshots__/ on Linux and opens a PR with the new PNGs so
+# regenerates frontend/e2e/__screenshots__/ on Linux and opens a PR with the new PNGs so
 # the change is reviewed like any other diff.
 #
 # Run it after any intentional UI change that the visual job then flags.
@@ -57,4 +57,4 @@ jobs:
             Review the image diff: every changed screenshot should correspond to
             a UI change you meant to make. If one doesn't, the visual job just
             caught a regression — fix that instead of merging this.
-          add-paths: e2e/__screenshots__
+          add-paths: frontend/e2e/__screenshots__
