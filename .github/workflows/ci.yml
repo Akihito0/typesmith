@@ -39,8 +39,9 @@ jobs:
       - name: Upload build for e2e
         uses: actions/upload-artifact@v4
         with:
+          # The Next root is frontend/, so the build lands in frontend/.next.
           name: next-build
-          path: .next
+          path: frontend/.next
           retention-days: 1
           include-hidden-files: true
 
@@ -63,7 +64,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: next-build
-          path: .next
+          path: frontend/.next
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
@@ -114,7 +115,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: next-build
-          path: .next
+          path: frontend/.next
 
       - name: Install Playwright browser
         if: steps.baselines.outputs.found == 'true'
