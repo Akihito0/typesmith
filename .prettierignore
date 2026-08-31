@@ -1,0 +1,4 @@
+# Prettier is also given .gitignore (see the format scripts), so this file only
+# lists tracked things that should not be reformatted.
+frontend/public
+package-lock.json

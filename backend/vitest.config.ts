@@ -1,13 +1,12 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
-// Unit tests only — they cover backend/ (the framework-free logic layer).
-// The Playwright e2e specs in e2e/ use their own runner.
+// Unit tests only — they cover this folder, the framework-free logic layer.
+// The Playwright e2e specs in frontend/e2e/ use their own runner.
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 export default defineConfig({
-  // This config lives in config/, so every path below is anchored to the
-  // repo root rather than to the config file.
+  // Anchored to the repo root so `@/...` matches the app's own import paths.
   root: repoRoot,
   // Same `@/*` -> repo root alias as tsconfig, so specs import modules by the
   // exact path the app uses.

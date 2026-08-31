@@ -65,19 +65,22 @@ corrupts it.
 
 ## Architecture
 
-The tree splits in two, plus a thin routing shell:
+Two halves, and almost nothing else:
 
 ```
-backend/    logic and data — no React, no rendering    (see backend/README.md)
-frontend/   components, stylesheet, and e2e specs      (see frontend/README.md)
-app/        Next.js routes only — metadata in, one component out (~190 lines)
-config/     tooling config that needn't sit at the root (see config/README.md)
-public/     static assets served at /
+backend/    logic and data — no React, nothing renders  (backend/README.md)
+frontend/   the Next.js app: routes, components, public/, e2e, its own config
+                                                        (frontend/README.md)
 ```
 
-`app/` and `public/` stay at the root because Next.js only looks for them
-there. So do `next.config.mjs`, `postcss.config.mjs`, `tsconfig.json`, and
-`.eslintrc.json` — `config/README.md` lists exactly why for each.
+`frontend/` is the Next.js project root — `npm run dev` runs `next dev
+frontend` — so `app/`, `public/`, `next.config.mjs`, `postcss.config.mjs`,
+`tailwind.config.ts` and `tsconfig.json` live there, with it, instead of
+cluttering the repo root. `backend/` is a sibling library it imports through
+`@/backend/…`; Next is told it may reach outside its own root by
+`experimental.externalDir`.
+
+The dependency runs one way: `frontend/` imports `backend/`, never the reverse.
 
 Everything hangs off one shared state object:
 
@@ -91,12 +94,11 @@ Everything hangs off one shared state object:
 - `backend/typography/scale.ts`, `backend/color/contrast.ts`,
   `backend/export/code.ts` — framework-free math and code generation (modular
   - fluid scales, WCAG/APCA, six export formats). Fully unit-tested.
-- `backend/playground/document.ts` — the infinite-canvas model: frames of any
+- `backend/playground/document.ts` — the infinite-canvas model: frames at any
   size, rectangles or ellipses, plus the draw and resize geometry.
 - `backend/project/workspace.ts` — the multi-project registry (localStorage).
-- `app/editor` + `frontend/editor/` — the tool; `app/page.tsx` +
-  `frontend/landing/` — the landing page, whose hero plays real editor
-  screenshots back as a simulated working session.
+- `frontend/app/` is routes only; the page bodies live in `frontend/docs/`,
+  `frontend/landing/`, `frontend/system/` and `frontend/editor/`.
 
 No server, no database, no env vars, no accounts — by design. "backend" is the
 logic layer, not a separate process.

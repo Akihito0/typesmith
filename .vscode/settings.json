@@ -1,8 +1,7 @@
 {
-  "// prettier + tailwind live in config/": "the extensions do not look there on their own",
-  "prettier.configPath": "config/.prettierrc.json",
-  "prettier.ignorePath": "config/.prettierignore",
-  "tailwindCSS.experimental.configFile": "config/tailwind.config.ts",
+  "// tailwind lives in the Next root": "frontend/, not the repo root",
+  "tailwindCSS.experimental.configFile": "frontend/tailwind.config.ts",
+  "prettier.ignorePath": ".prettierignore",
 
   "// hide generated output": "everything below is gitignored build or tooling output",
   "files.exclude": {

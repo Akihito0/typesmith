@@ -1,9 +1,23 @@
+import path from "node:path";
 import type { Config } from "tailwindcss";
 
-// Content globs resolve from the working directory (the repo root, since
-// every entry point is an npm script) — not from this file.
+// Tailwind resolves relative content globs from the working directory, which
+// is the repo root (npm scripts run `next build frontend`) — not from this
+// file. Absolute paths keep them correct whatever the cwd. backend/ is scanned
+// because its export templates contain class names that would otherwise be
+// purged.
+const here = __dirname;
+
 const config: Config = {
-  content: ["./app/**/*.{ts,tsx}", "./frontend/**/*.{ts,tsx}", "./backend/**/*.{ts,tsx}"],
+  content: [
+    path.join(here, "app/**/*.{ts,tsx}"),
+    path.join(here, "docs/**/*.{ts,tsx}"),
+    path.join(here, "editor/**/*.{ts,tsx}"),
+    path.join(here, "landing/**/*.{ts,tsx}"),
+    path.join(here, "system/**/*.{ts,tsx}"),
+    path.join(here, "ui/**/*.{ts,tsx}"),
+    path.join(here, "..", "backend/**/*.{ts,tsx}"),
+  ],
   theme: {
     extend: {
       colors: {

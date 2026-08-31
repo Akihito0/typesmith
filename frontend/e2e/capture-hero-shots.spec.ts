@@ -8,14 +8,16 @@ import path from "node:path";
 //   CAPTURE_SHOTS=1 npx playwright test capture-hero-shots
 //
 // It drives the editor through the same eight-beat workflow the showcase
-// narrates and writes public/shots/01–08. Re-run it after any editor UI change,
+// narrates and writes frontend/public/shots/01–08. Re-run it after any editor UI change,
 // then re-check the `target` percentages in HeroShowcase.tsx — those point the
 // demo cursor at a control *inside* the image, so a moved toolbar control makes
 // the cursor press empty space.
 //
 // Skipped unless CAPTURE_SHOTS=1 so it never runs as part of the normal suite.
 
-const OUT = path.join(process.cwd(), "public", "shots");
+// Anchored to this file, not the cwd: public/ lives in the Next root
+// (frontend/), while npm scripts run from the repo root.
+const OUT = path.resolve(__dirname, "..", "public", "shots");
 
 test.skip(process.env.CAPTURE_SHOTS !== "1", "set CAPTURE_SHOTS=1 to regenerate hero shots");
 

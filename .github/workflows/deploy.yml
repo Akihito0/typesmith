@@ -41,24 +41,25 @@ jobs:
           # Without this, metadataBase falls back to localhost and every
           # og:image / canonical URL in the published site points at
           # http://localhost:3000 — social previews break silently.
-          # Origin only, no path: lib/site.ts explains why.
+          # Origin only, no path: backend/site.ts explains why.
           NEXT_PUBLIC_SITE_URL: https://${{ github.repository_owner }}.github.io
 
       - name: Verify the published URLs are absolute
         run: |
-          if grep -q "localhost:3000" out/index.html; then
+          if grep -q "localhost:3000" frontend/out/index.html; then
             echo "::error::Built HTML still references localhost — NEXT_PUBLIC_SITE_URL didn't apply."
-            grep -o 'content="http://localhost:3000[^"]*"' out/index.html | head -5
+            grep -o 'content="http://localhost:3000[^"]*"' frontend/out/index.html | head -5
             exit 1
           fi
-          test -f out/sitemap.xml && test -f out/robots.txt
+          test -f frontend/out/sitemap.xml && test -f frontend/out/robots.txt
 
       - name: Verify export output
-        run: test -f out/index.html && test -f out/editor.html
+        run: test -f frontend/out/index.html && test -f frontend/out/editor.html
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: out
+          # The Next root is frontend/, so the static export lands there.
+          path: frontend/out
 
   deploy:
     needs: build
