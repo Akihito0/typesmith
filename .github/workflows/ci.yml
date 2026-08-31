@@ -37,7 +37,7 @@ jobs:
         run: npm run build
 
       - name: Upload build for e2e
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: next-build
           path: .next
@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: playwright-report
@@ -126,7 +126,7 @@ jobs:
 
       - name: Upload visual diff report
         if: failure() && steps.baselines.outputs.found == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-visual-report
           path: playwright-report
