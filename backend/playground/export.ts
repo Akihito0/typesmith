@@ -91,6 +91,8 @@ function drawLayer(
   const stack = resolvedFontStack(fontById(layer.fontId).stack);
 
   ctx.save();
+  applyRotation(ctx, layer, origin, scale);
+  ctx.globalAlpha = layer.opacity;
   ctx.beginPath();
   ctx.rect(left, top, layer.width * scale, layer.height * scale);
   ctx.clip();
@@ -108,6 +110,22 @@ function drawLayer(
 
 /** Trace a frame's outline — rectangle, rounded rectangle, or ellipse — in
  * device pixels, so the painted shape matches what the canvas shows. */
+/** Rotate the canvas about a node's centre so the node can be drawn in its own
+ * upright coordinates. Callers must save/restore around this. */
+function applyRotation(
+  ctx: CanvasRenderingContext2D,
+  node: { x: number; y: number; width: number; height: number; rotation: number },
+  origin: PlaygroundRect,
+  scale: number
+) {
+  if (!node.rotation) return;
+  const cx = (node.x - origin.x + node.width / 2) * scale;
+  const cy = (node.y - origin.y + node.height / 2) * scale;
+  ctx.translate(cx, cy);
+  ctx.rotate((node.rotation * Math.PI) / 180);
+  ctx.translate(-cx, -cy);
+}
+
 function traceFrame(
   ctx: CanvasRenderingContext2D,
   frame: PlaygroundFrame,
@@ -173,7 +191,7 @@ export async function exportPlaygroundPng(
     ? documentState.layers.filter((layer) => frameForLayer(documentState, layer)?.id === frame.id)
     : documentState.layers;
 
-  await Promise.all(layers.map(loadLayerFont));
+  await Promise.all(layers.filter((layer) => !layer.hidden).map(loadLayerFont));
 
   const scale = 2;
   const canvas = document.createElement("canvas");
@@ -184,10 +202,13 @@ export async function exportPlaygroundPng(
 
   if (frame) {
     // Exporting one frame crops to that frame, so anything outside its shape
-    // stays transparent — an ellipse frame exports as an ellipse.
+    // stays transparent — an ellipse frame exports as an ellipse. The crop is
+    // upright even when the frame is rotated on the canvas.
     traceFrame(ctx, frame, origin, scale);
+    ctx.globalAlpha = frame.opacity;
     ctx.fillStyle = frame.background;
     ctx.fill();
+    ctx.globalAlpha = 1;
   } else {
     ctx.fillStyle = CANVAS_EXPORT_BACKGROUND;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -195,9 +216,14 @@ export async function exportPlaygroundPng(
   ctx.textBaseline = "top";
 
   paintedFrames.forEach((item) => {
+    if (item.hidden) return;
+    ctx.save();
+    applyRotation(ctx, item, origin, scale);
+    ctx.globalAlpha = item.opacity;
     traceFrame(ctx, item, origin, scale);
     ctx.fillStyle = item.background;
     ctx.fill();
+    ctx.restore();
   });
 
   ctx.save();
@@ -206,7 +232,10 @@ export async function exportPlaygroundPng(
     traceFrame(ctx, frame, origin, scale);
     ctx.clip();
   }
-  layers.forEach((layer) => drawLayer(ctx, layer, origin, scale));
+  layers.forEach((layer) => {
+    if (layer.hidden) return;
+    drawLayer(ctx, layer, origin, scale);
+  });
   ctx.restore();
 
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));

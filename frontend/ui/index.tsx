@@ -188,3 +188,134 @@ export function Shuffle({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
+// ---- Playground tool icons ------------------------------------------------
+// Same 24-unit box, 2px stroke and round caps as the icons above, so they sit
+// on the same optical weight in the tool dock.
+function ToolIcon({
+  children,
+  className = "",
+  fill = "none",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  fill?: string;
+}) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill={fill}
+      className={className}
+      aria-hidden="true"
+      focusable="false"
+    >
+      {children}
+    </svg>
+  );
+}
+
+export function CursorIcon({ className = "" }: { className?: string }) {
+  return (
+    <ToolIcon className={className}>
+      <path
+        d="M5 3l6.5 17 2.4-6.9 6.9-2.4L5 3z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+    </ToolIcon>
+  );
+}
+
+export function TextIcon({ className = "" }: { className?: string }) {
+  return (
+    <ToolIcon className={className}>
+      <path
+        d="M5 6V4h14v2M12 4v16M9 20h6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </ToolIcon>
+  );
+}
+
+export function FrameIcon({ className = "" }: { className?: string }) {
+  return (
+    <ToolIcon className={className}>
+      <path
+        d="M8 3v18M16 3v18M3 8h18M3 16h18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </ToolIcon>
+  );
+}
+
+export function EllipseIcon({ className = "" }: { className?: string }) {
+  return (
+    <ToolIcon className={className}>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+    </ToolIcon>
+  );
+}
+
+export function MagnetIcon({ className = "" }: { className?: string }) {
+  return (
+    <ToolIcon className={className}>
+      <path
+        d="M6 4v8a6 6 0 0 0 12 0V4M6 10h4M14 10h4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </ToolIcon>
+  );
+}
+
+export function DuplicateIcon({ className = "" }: { className?: string }) {
+  return (
+    <ToolIcon className={className}>
+      <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M15 5H6a2 2 0 0 0-2 2v9"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </ToolIcon>
+  );
+}
+
+export function TrashIcon({ className = "" }: { className?: string }) {
+  return (
+    <ToolIcon className={className}>
+      <path
+        d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v5M14 11v5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </ToolIcon>
+  );
+}
+
+export function KeyboardIcon({ className = "" }: { className?: string }) {
+  return (
+    <ToolIcon className={className}>
+      <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </ToolIcon>
+  );
+}

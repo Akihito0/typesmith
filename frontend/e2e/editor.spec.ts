@@ -258,7 +258,7 @@ test.describe("playground", () => {
     const box = await canvas.boundingBox();
     if (!box) throw new Error("The playground canvas has no layout box.");
 
-    await page.getByRole("button", { name: "Frame", exact: true }).click();
+    await page.getByRole("button", { name: "Frame tool" }).click();
     await page.mouse.move(box.x + 40, box.y + 40);
     await page.mouse.down();
     await page.mouse.move(box.x + 260, box.y + 150, { steps: 12 });
@@ -289,7 +289,7 @@ test.describe("playground", () => {
     const box = await canvas.boundingBox();
     if (!box) throw new Error("The playground canvas has no layout box.");
 
-    await page.getByRole("button", { name: "Ellipse", exact: true }).click();
+    await page.getByRole("button", { name: "Ellipse tool" }).click();
     await page.mouse.move(box.x + 60, box.y + 60);
     await page.mouse.down();
     await page.mouse.move(box.x + 240, box.y + 240, { steps: 12 });
@@ -308,5 +308,151 @@ test.describe("playground", () => {
     await radius.fill("24");
     await radius.blur();
     await expect(page.getByLabel("Corner radius")).toHaveValue("24");
+  });
+});
+
+test.describe("playground objects", () => {
+  async function openPlayground(page: import("@playwright/test").Page) {
+    await page.getByRole("button", { name: "Playground" }).click();
+    const canvas = page.getByTestId("playground-canvas");
+    await expect(canvas).toBeVisible();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error("The playground canvas has no layout box.");
+    return { canvas, box };
+  }
+
+  async function drawFrame(
+    page: import("@playwright/test").Page,
+    box: { x: number; y: number },
+    from: [number, number],
+    to: [number, number],
+    tool = "Frame"
+  ) {
+    await page.getByRole("button", { name: `${tool} tool` }).click();
+    await page.mouse.move(box.x + from[0], box.y + from[1]);
+    await page.mouse.down();
+    await page.mouse.move(box.x + to[0], box.y + to[1], { steps: 10 });
+    await page.mouse.up();
+  }
+
+  test("the tool dock arms tools and explains itself", async ({ page }) => {
+    await openPlayground(page);
+
+    const move = page.getByRole("button", { name: "Move tool" });
+    const text = page.getByRole("button", { name: "Text tool" });
+    await expect(move).toHaveAttribute("aria-pressed", "true");
+
+    await text.click();
+    await expect(text).toHaveAttribute("aria-pressed", "true");
+    await expect(move).toHaveAttribute("aria-pressed", "false");
+    // The dock says what the armed tool will do.
+    await expect(page.getByText(/Drag to draw a text box at any size/)).toBeVisible();
+
+    // Keyboard picks tools too.
+    await page.keyboard.press("f");
+    await expect(page.getByRole("button", { name: "Frame tool" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+
+    // Snapping is on by default and toggles from the dock.
+    const snap = page.getByRole("button", { name: "Snap to objects" });
+    await expect(snap).toHaveAttribute("aria-pressed", "true");
+    await snap.click();
+    await expect(snap).toHaveAttribute("aria-pressed", "false");
+
+    // Shortcuts sheet opens from the dock and closes on Escape.
+    await page.getByRole("button", { name: "Shortcuts" }).click();
+    await expect(page.getByRole("heading", { name: "Shortcuts" })).toBeVisible();
+    await expect(page.getByText("Zoom to selection")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("heading", { name: "Shortcuts" })).toBeHidden();
+  });
+
+  test("a node can be rotated and faded", async ({ page }) => {
+    const { box } = await openPlayground(page);
+    await drawFrame(page, box, [60, 60], [260, 200]);
+
+    await page.getByLabel("Rotation (°)").fill("30");
+    await page.getByLabel("Rotation (°)").blur();
+    await expect(page.getByLabel("Rotation (°)")).toHaveValue("30");
+
+    await page.getByLabel("Opacity (%)").fill("40");
+    await page.getByLabel("Opacity (%)").blur();
+    await expect(page.getByLabel("Opacity (%)")).toHaveValue("40");
+
+    // Rotation wraps rather than piling up past half a turn.
+    await page.getByRole("button", { name: "+90", exact: true }).click();
+    await page.getByRole("button", { name: "+90", exact: true }).click();
+    await expect(page.getByLabel("Rotation (°)")).toHaveValue("-150");
+  });
+
+  test("hiding takes a node off the canvas and locking protects it", async ({ page }) => {
+    const { box } = await openPlayground(page);
+    await drawFrame(page, box, [60, 60], [260, 200]);
+    await expect(page.getByText("3 frames")).toBeVisible();
+
+    await page.getByRole("button", { name: "Hide", exact: true }).click();
+    // Hiding clears the selection, so the Object section goes away with it.
+    await expect(page.getByLabel("Rotation (°)")).toBeHidden();
+    // The node is still in the document, just not rendered.
+    await expect(page.getByText("3 frames")).toBeVisible();
+
+    await page.getByRole("button", { name: /^Show Frame 3$/ }).click();
+    await page.getByRole("button", { name: /^Lock Frame 3$/ }).click();
+    await expect(page.getByRole("button", { name: /^Unlock Frame 3$/ })).toBeVisible();
+  });
+
+  test("copy and paste adds a node without touching the original", async ({ page }) => {
+    const { box } = await openPlayground(page);
+    await drawFrame(page, box, [60, 60], [260, 200]);
+    await expect(page.getByText("3 frames")).toBeVisible();
+
+    const modifier = process.platform === "darwin" ? "Meta" : "Control";
+    await page.keyboard.press(`${modifier}+c`);
+    await page.keyboard.press(`${modifier}+v`);
+    await expect(page.getByText("4 frames")).toBeVisible();
+  });
+
+  test("a snap guide appears when a drag lines up with something", async ({ page }) => {
+    const { box } = await openPlayground(page);
+    await drawFrame(page, box, [520, 120], [660, 260]);
+    // Drop a second frame whose left edge is a few px off the first one's.
+    await drawFrame(page, box, [524, 320], [640, 430]);
+
+    await expect(page.getByTestId("snap-guide")).toHaveCount(0);
+    // Nudge it: the near-aligned left edges should catch.
+    await page.mouse.move(box.x + 580, box.y + 375);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 578, box.y + 372, { steps: 6 });
+    await expect(page.getByTestId("snap-guide").first()).toBeVisible();
+    await page.mouse.up();
+    // Guides are a drag affordance only — they clear on release.
+    await expect(page.getByTestId("snap-guide")).toHaveCount(0);
+  });
+
+  test("aligning a multi-selection lines the nodes up with each other", async ({ page }) => {
+    const { box } = await openPlayground(page);
+    await drawFrame(page, box, [520, 120], [640, 220]);
+    await drawFrame(page, box, [700, 300], [820, 400]);
+
+    // Select through the layer tree: stable names, and it covers that surface
+    // too. Canvas coordinates depend on the current zoom and what sits under
+    // the pointer.
+    const rowThree = page.getByRole("button", { name: /^▢ Frame 3/ });
+    const rowFour = page.getByRole("button", { name: /^▢ Frame 4/ });
+    await rowThree.click();
+    await rowFour.click({ modifiers: ["Shift"] });
+    await expect(page.getByRole("heading", { name: /^Object · 2$/ })).toBeVisible();
+
+    await page.getByRole("button", { name: "Left", exact: true }).click();
+
+    // Prove they share an X now, by reading each one's own inspector.
+    const xField = page.getByRole("spinbutton", { name: "X", exact: true });
+    await rowFour.click();
+    const fourX = await xField.inputValue();
+    await rowThree.click();
+    const threeX = await xField.inputValue();
+    expect(fourX).toBe(threeX);
   });
 });

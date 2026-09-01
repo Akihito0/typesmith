@@ -1,7 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Segmented, Select } from "@/frontend/ui";
+import {
+  Button,
+  CursorIcon,
+  DuplicateIcon,
+  EllipseIcon,
+  FrameIcon,
+  KeyboardIcon,
+  MagnetIcon,
+  Segmented,
+  Select,
+  TextIcon,
+  TrashIcon,
+} from "@/frontend/ui";
 import { FontPicker } from "@/frontend/editor/FontPicker";
 import { fontById } from "@/backend/fonts/catalog";
 import { ensureGoogleFont, gfFamilyFromId } from "@/backend/fonts/google";
@@ -13,13 +25,16 @@ import {
   MIN_LAYER_HEIGHT,
   MIN_LAYER_WIDTH,
   PLAYGROUND_HANDLES,
-  alignPlaygroundLayer,
   createPlaygroundFrame,
   createPlaygroundTextLayer,
+  alignPlaygroundNodes,
+  copyPlaygroundNodes,
+  distributePlaygroundNodes,
   drawnRect,
   duplicatePlaygroundNodes,
   fitFrameToContents,
   layersInFrame,
+  pastePlaygroundNodes,
   looseLayers,
   patchPlaygroundNodes,
   playgroundBounds,
@@ -28,15 +43,23 @@ import {
   rectOf,
   rectsIntersect,
   removePlaygroundNodes,
-  reorderPlaygroundLayer,
+  reorderPlaygroundNode,
   resizePlaygroundRect,
+  rotateDelta,
+  setPlaygroundNodeFlags,
+  snapRect,
+  snapTargets,
   updatePlaygroundFrame,
   updatePlaygroundLayers,
+  updatePlaygroundNodes,
   type PlaygroundAlignment,
+  type PlaygroundDistribute,
   type PlaygroundDocument,
   type PlaygroundFrame,
+  type PlaygroundGuide,
   type PlaygroundHandle,
   type PlaygroundLayerMove,
+  type PlaygroundNodeBase,
   type PlaygroundRect,
   type PlaygroundShape,
   type PlaygroundTextAlign,
@@ -60,10 +83,54 @@ const FRAME_SIZES = [
 ];
 
 const TOOLS = [
-  { label: "Move", value: "move" as const },
-  { label: "Text", value: "text" as const },
-  { label: "Frame", value: "frame" as const },
-  { label: "Ellipse", value: "ellipse" as const },
+  { label: "Move", value: "move" as const, key: "V", Icon: CursorIcon },
+  { label: "Text", value: "text" as const, key: "T", Icon: TextIcon },
+  { label: "Frame", value: "frame" as const, key: "F", Icon: FrameIcon },
+  { label: "Ellipse", value: "ellipse" as const, key: "O", Icon: EllipseIcon },
+];
+
+/** Grouped for the shortcuts sheet behind the dock's ⌨ button. */
+const SHORTCUTS: { group: string; items: [string, string][] }[] = [
+  {
+    group: "Tools",
+    items: [
+      ["V", "Move"],
+      ["T", "Text"],
+      ["F", "Frame"],
+      ["O", "Ellipse"],
+      ["S", "Toggle snapping"],
+    ],
+  },
+  {
+    group: "Canvas",
+    items: [
+      ["Scroll", "Pan"],
+      ["⌘ / ctrl + scroll", "Zoom"],
+      ["Space + drag", "Grab"],
+      ["1", "Zoom to fit"],
+      ["2", "Zoom to selection"],
+    ],
+  },
+  {
+    group: "Drawing",
+    items: [
+      ["⇧ drag", "Square / keep ratio"],
+      ["⌥ drag", "From the centre"],
+      ["⌥ drag node", "Duplicate"],
+      ["⌘ / ctrl drag", "Ignore snapping"],
+      ["Esc", "Cancel"],
+    ],
+  },
+  {
+    group: "Editing",
+    items: [
+      ["⌘C / ⌘X / ⌘V", "Copy, cut, paste"],
+      ["⌘D", "Duplicate"],
+      ["⌘⇧L", "Lock"],
+      ["⌘⇧H", "Hide"],
+      ["Arrows", "Nudge (⇧ ×10)"],
+    ],
+  },
 ];
 
 const SHAPE_OPTIONS: { label: string; value: PlaygroundShape }[] = [
@@ -100,9 +167,19 @@ type Gesture =
       id: string;
       handle: PlaygroundHandle;
       origin: PlaygroundRect;
+      rotation: number;
       minWidth: number;
       minHeight: number;
     };
+
+/** Bounding box of a set of rects — the box a multi-node drag snaps with. */
+function unionOf(rects: PlaygroundRect[]): PlaygroundRect {
+  const minX = Math.min(...rects.map((r) => r.x));
+  const minY = Math.min(...rects.map((r) => r.y));
+  const maxX = Math.max(...rects.map((r) => r.x + r.width));
+  const maxY = Math.max(...rects.map((r) => r.y + r.height));
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -111,6 +188,44 @@ function clamp(value: number, min: number, max: number) {
 function numberValue(value: string, fallback: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function DockDivider() {
+  return <span className="mx-1 h-6 w-px shrink-0 bg-canvas-line" />;
+}
+
+/** One dock control. Dark by design: the canvas behind it is light, so this is
+ * the one piece of chrome that should read as "on top of" the artwork. */
+function DockButton({
+  label,
+  hint,
+  active = false,
+  disabled = false,
+  onClick,
+  children,
+}: {
+  label: string;
+  hint: string;
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={active}
+      title={`${label} (${hint})`}
+      disabled={disabled}
+      onClick={onClick}
+      className={`grid h-9 w-9 place-items-center rounded-lg transition-colors disabled:pointer-events-none disabled:opacity-35 ${
+        active ? "bg-brand-600 text-white" : "text-gray-300 hover:bg-canvas-panel hover:text-white"
+      }`}
+    >
+      {children}
+    </button>
+  );
 }
 
 function IconButton({
@@ -150,6 +265,9 @@ export function PlaygroundPanel() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tool, setTool] = useState<Tool>("move");
   const [drawRect, setDrawRect] = useState<PlaygroundRect | null>(null);
+  const [guides, setGuides] = useState<PlaygroundGuide[]>([]);
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [marquee, setMarquee] = useState<PlaygroundRect | null>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, zoom: 0.5 });
@@ -164,6 +282,10 @@ export function PlaygroundPanel() {
   const draftRef = useRef<Draft | null>(null);
   const drawRectRef = useRef<PlaygroundRect | null>(null);
   const toolRef = useRef(tool);
+  const snapEnabledRef = useRef(snapEnabled);
+  // Cut/copy lives in the component, not the document: it should survive
+  // switching panels but has no business in the shared project state.
+  const clipboardRef = useRef<ReturnType<typeof copyPlaygroundNodes> | null>(null);
   const playgroundRef = useRef(playground);
   const viewRef = useRef(view);
   const selectionRef = useRef(selection);
@@ -171,6 +293,7 @@ export function PlaygroundPanel() {
 
   playgroundRef.current = playground;
   toolRef.current = tool;
+  snapEnabledRef.current = snapEnabled;
   viewRef.current = view;
   selectionRef.current = selection;
 
@@ -190,6 +313,13 @@ export function PlaygroundPanel() {
   const activeLayer = selectedLayers.length === 1 ? selectedLayers[0] : null;
   const activeFrame =
     selectedFrames.length === 1 && selectedLayers.length === 0 ? selectedFrames[0] : null;
+  /** Everything selected, of either kind — for controls that apply to both. */
+  const selectedNodes: PlaygroundNodeBase[] = useMemo(
+    () => [...selectedFrames, ...selectedLayers],
+    [selectedFrames, selectedLayers]
+  );
+  const activeNode: PlaygroundNodeBase | null =
+    selection.length === 1 ? (activeLayer ?? activeFrame) : null;
 
   // Prune ids that history/undo removed from the document.
   useEffect(() => {
@@ -315,12 +445,12 @@ export function PlaygroundPanel() {
 
   // --- gestures --------------------------------------------------------------
 
-  const gatherOrigins = useCallback((ids: string[]): Draft => {
-    const doc = playgroundRef.current;
+  const gatherOriginsIn = useCallback((doc: PlaygroundDocument, ids: string[]): Draft => {
     const origins: Draft = {};
     ids.forEach((id) => {
       const frame = doc.frames.find((item) => item.id === id);
       if (frame) {
+        if (frame.locked) return;
         origins[frame.id] = rectOf(frame);
         // Dragging a frame carries the text sitting on it.
         layersInFrame(doc, frame.id).forEach((layer) => {
@@ -329,10 +459,15 @@ export function PlaygroundPanel() {
         return;
       }
       const layer = doc.layers.find((item) => item.id === id);
-      if (layer) origins[layer.id] = rectOf(layer);
+      if (layer && !layer.locked) origins[layer.id] = rectOf(layer);
     });
     return origins;
   }, []);
+
+  const gatherOrigins = useCallback(
+    (ids: string[]): Draft => gatherOriginsIn(playgroundRef.current, ids),
+    [gatherOriginsIn]
+  );
 
   const beginGesture = useCallback((gesture: Gesture) => {
     gestureRef.current = gesture;
@@ -432,11 +567,16 @@ export function PlaygroundPanel() {
           height: Math.abs(end.y - start.y),
         };
         const doc = playgroundRef.current;
+        const selectable = (node: PlaygroundNodeBase) => !node.locked && !node.hidden;
         const hits = [
           // Frames only join the selection when fully enclosed, so a marquee
           // drawn inside a frame grabs its text instead of the frame.
-          ...doc.frames.filter((frame) => rectContainsRect(canvasRect, rectOf(frame))),
-          ...doc.layers.filter((layer) => rectsIntersect(canvasRect, rectOf(layer))),
+          ...doc.frames.filter(
+            (frame) => selectable(frame) && rectContainsRect(canvasRect, rectOf(frame))
+          ),
+          ...doc.layers.filter(
+            (layer) => selectable(layer) && rectsIntersect(canvasRect, rectOf(layer))
+          ),
         ].map((node) => node.id);
         setSelection(Array.from(new Set([...gesture.base, ...hits])));
         return;
@@ -444,12 +584,17 @@ export function PlaygroundPanel() {
 
       if (gesture.kind === "draw") {
         const pointer = toCanvas(event.clientX, event.clientY);
-        applyDrawRect(
-          drawnRect(gesture.anchor.x, gesture.anchor.y, pointer.x, pointer.y, {
-            square: event.shiftKey,
-            fromCenter: event.altKey,
-          })
-        );
+        const drawn = drawnRect(gesture.anchor.x, gesture.anchor.y, pointer.x, pointer.y, {
+          square: event.shiftKey,
+          fromCenter: event.altKey,
+        });
+        if (snapEnabledRef.current && !event.metaKey && !event.ctrlKey) {
+          const snapped = snapRect(drawn, snapTargets(playgroundRef.current, []));
+          setGuides(snapped.guides);
+        } else {
+          setGuides([]);
+        }
+        applyDrawRect(drawn);
         return;
       }
 
@@ -457,16 +602,40 @@ export function PlaygroundPanel() {
       const dy = (event.clientY - gesture.startY) / zoom;
 
       if (gesture.kind === "move") {
-        const next: Draft = {};
+        const moved: Draft = {};
         Object.entries(gesture.origins).forEach(([id, rect]) => {
-          next[id] = { ...rect, x: Math.round(rect.x + dx), y: Math.round(rect.y + dy) };
+          moved[id] = { ...rect, x: Math.round(rect.x + dx), y: Math.round(rect.y + dy) };
         });
-        applyDraft(next);
+
+        // Snap the selection as a whole — union box against everything else —
+        // then shift every dragged node by the same correction, so their
+        // relative layout survives the drag. Ctrl/⌘ suspends it.
+        const ids = Object.keys(moved);
+        const snapping = snapEnabledRef.current && !event.metaKey && !event.ctrlKey;
+        if (snapping && ids.length > 0) {
+          const union = unionOf(ids.map((id) => moved[id]));
+          const snapped = snapRect(union, snapTargets(playgroundRef.current, ids));
+          const shiftX = snapped.rect.x - union.x;
+          const shiftY = snapped.rect.y - union.y;
+          if (shiftX || shiftY) {
+            ids.forEach((id) => {
+              moved[id] = { ...moved[id], x: moved[id].x + shiftX, y: moved[id].y + shiftY };
+            });
+          }
+          setGuides(snapped.guides);
+        } else {
+          setGuides([]);
+        }
+
+        applyDraft(moved);
         return;
       }
 
+      // A rotated node resizes along its own edges, so the screen-space drag
+      // is mapped into its local frame first.
+      const local = rotateDelta(dx, dy, gesture.rotation);
       applyDraft({
-        [gesture.id]: resizePlaygroundRect(gesture.origin, gesture.handle, dx, dy, {
+        [gesture.id]: resizePlaygroundRect(gesture.origin, gesture.handle, local.dx, local.dy, {
           minWidth: gesture.minWidth,
           minHeight: gesture.minHeight,
           // Free in both axes by default; Shift opts into the starting ratio
@@ -486,6 +655,7 @@ export function PlaygroundPanel() {
       setMarquee(null);
       applyDraft(null);
       applyDrawRect(null);
+      setGuides([]);
       if (!gesture) return;
       if (gesture.kind === "draw") {
         commitDraw(gesture.tool, drawn, gesture.anchor);
@@ -575,6 +745,23 @@ export function PlaygroundPanel() {
         : [id];
     setSelection(next);
     if (editingId && editingId !== id) setEditingId(null);
+
+    // ⌥-drag leaves a copy behind and drags the copy, as in Figma.
+    if (event.altKey) {
+      const result = duplicatePlaygroundNodes(playgroundRef.current, next, 0);
+      if (result.ids.length > 0) {
+        commit(result.document);
+        setSelection(result.ids);
+        beginGesture({
+          kind: "move",
+          startX: event.clientX,
+          startY: event.clientY,
+          origins: gatherOriginsIn(result.document, result.ids),
+        });
+        return;
+      }
+    }
+
     beginGesture({
       kind: "move",
       startX: event.clientX,
@@ -588,6 +775,7 @@ export function PlaygroundPanel() {
     id: string,
     handle: PlaygroundHandle,
     origin: PlaygroundRect,
+    rotation: number,
     minWidth: number,
     minHeight: number
   ) => {
@@ -601,6 +789,7 @@ export function PlaygroundPanel() {
       id,
       handle,
       origin,
+      rotation,
       minWidth,
       minHeight,
     });
@@ -627,8 +816,69 @@ export function PlaygroundPanel() {
 
   const selectAll = useCallback(() => {
     const doc = playgroundRef.current;
-    setSelection([...doc.frames.map((frame) => frame.id), ...doc.layers.map((layer) => layer.id)]);
+    // Locked and hidden nodes aren't selectable by pointer, so Select All
+    // shouldn't sweep them up either.
+    setSelection(
+      [...doc.frames, ...doc.layers]
+        .filter((node) => !node.locked && !node.hidden)
+        .map((node) => node.id)
+    );
   }, []);
+
+  const toggleFlag = useCallback(
+    (flag: "locked" | "hidden") => {
+      const ids = selectionRef.current;
+      if (ids.length === 0) return;
+      const doc = playgroundRef.current;
+      const nodes = [...doc.frames, ...doc.layers].filter((node) => ids.includes(node.id));
+      // Mixed selections resolve to "turn it on for everything".
+      const next = !nodes.every((node) => node[flag]);
+      commit(setPlaygroundNodeFlags(doc, ids, { [flag]: next }));
+      if (flag === "hidden" && next) setSelection([]);
+    },
+    [commit]
+  );
+
+  const copySelection = useCallback(
+    (cut = false) => {
+      const ids = selectionRef.current;
+      if (ids.length === 0) return;
+      clipboardRef.current = copyPlaygroundNodes(playgroundRef.current, ids);
+      if (cut) {
+        commit(removePlaygroundNodes(playgroundRef.current, ids));
+        setSelection([]);
+      }
+    },
+    [commit]
+  );
+
+  const pasteClipboard = useCallback(() => {
+    const clipboard = clipboardRef.current;
+    if (!clipboard) return;
+    const result = pastePlaygroundNodes(playgroundRef.current, clipboard);
+    if (result.ids.length === 0) return;
+    commit(result.document);
+    setSelection(result.ids);
+  }, [commit]);
+
+  const alignSelection = useCallback(
+    (alignment: PlaygroundAlignment) => {
+      const ids = selectionRef.current;
+      if (ids.length === 0) return;
+      const next = alignPlaygroundNodes(playgroundRef.current, ids, alignment);
+      if (next !== playgroundRef.current) commit(next);
+    },
+    [commit]
+  );
+
+  const distributeSelection = useCallback(
+    (axis: PlaygroundDistribute) => {
+      const ids = selectionRef.current;
+      const next = distributePlaygroundNodes(playgroundRef.current, ids, axis);
+      if (next !== playgroundRef.current) commit(next);
+    },
+    [commit]
+  );
 
   const patchLayers = useCallback(
     (patch: Partial<PlaygroundTextLayer>, coalesce = true) => {
@@ -667,7 +917,16 @@ export function PlaygroundPanel() {
         setSpaceDown(true);
         return;
       }
+      if (event.key === "?") {
+        event.preventDefault();
+        setShortcutsOpen((open) => !open);
+        return;
+      }
       if (event.key === "Escape") {
+        if (shortcutsOpen) {
+          setShortcutsOpen(false);
+          return;
+        }
         // Abandon a half-drawn shape rather than committing it on release:
         // dropping the gesture tears down the pointer listeners, so the
         // pending rect never reaches commitDraw.
@@ -706,6 +965,36 @@ export function PlaygroundPanel() {
       if (picked) {
         event.preventDefault();
         setTool(picked);
+        return;
+      }
+      if (meta && event.key.toLowerCase() === "c") {
+        event.preventDefault();
+        copySelection();
+        return;
+      }
+      if (meta && event.key.toLowerCase() === "x") {
+        event.preventDefault();
+        copySelection(true);
+        return;
+      }
+      if (meta && event.key.toLowerCase() === "v") {
+        event.preventDefault();
+        pasteClipboard();
+        return;
+      }
+      if (meta && event.shiftKey && event.key.toLowerCase() === "h") {
+        event.preventDefault();
+        toggleFlag("hidden");
+        return;
+      }
+      if (meta && event.shiftKey && event.key.toLowerCase() === "l") {
+        event.preventDefault();
+        toggleFlag("locked");
+        return;
+      }
+      if (!meta && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        setSnapEnabled((current) => !current);
         return;
       }
       if (selectionRef.current.length === 0) return;
@@ -750,6 +1039,9 @@ export function PlaygroundPanel() {
   }, [
     applyDrawRect,
     commit,
+    copySelection,
+    pasteClipboard,
+    toggleFlag,
     deleteSelection,
     duplicateSelection,
     editingId,
@@ -757,6 +1049,7 @@ export function PlaygroundPanel() {
     fitSelection,
     gatherOrigins,
     selectAll,
+    shortcutsOpen,
     zoomByStep,
   ]);
 
@@ -807,19 +1100,25 @@ export function PlaygroundPanel() {
       ),
     onPatchLayers: patchLayers,
     onPatchFrame: patchFrame,
+    selectedNodes,
+    activeNode,
     onFitFrame: (id) => commit(fitFrameToContents(playgroundRef.current, id)),
-    onAlign: (alignment) => {
-      const ids = selectionRef.current.filter((id) =>
-        playground.layers.some((layer) => layer.id === id)
-      );
-      let next = playground;
-      ids.forEach((id) => {
-        next = alignPlaygroundLayer(next, id, alignment);
-      });
-      if (next !== playground) commit(next);
+    onPatchNodes: (patch, coalesce = true) => {
+      const ids = selectionRef.current;
+      if (ids.length === 0) return;
+      commit(updatePlaygroundNodes(playgroundRef.current, ids, patch), coalesce);
     },
+    onToggleFlag: toggleFlag,
+    onSelectFlag: (id, flag) => {
+      const doc = playgroundRef.current;
+      const node = [...doc.frames, ...doc.layers].find((item) => item.id === id);
+      if (!node) return;
+      commit(setPlaygroundNodeFlags(doc, [id], { [flag]: !node[flag] }));
+    },
+    onDistribute: distributeSelection,
+    onAlign: alignSelection,
     onReorder: (move) =>
-      activeLayer && commit(reorderPlaygroundLayer(playground, activeLayer.id, move)),
+      activeNode && commit(reorderPlaygroundNode(playground, activeNode.id, move)),
     onDelete: deleteSelection,
   };
 
@@ -840,22 +1139,6 @@ export function PlaygroundPanel() {
           </p>
           <p className="text-xs text-muted">Infinite canvas</p>
         </div>
-        <Segmented options={TOOLS} value={tool} onChange={setTool} size="sm" />
-        <Button
-          variant="outline"
-          className="hidden h-8 px-3 text-xs sm:inline-flex"
-          onClick={duplicateSelection}
-          disabled={selection.length === 0}
-        >
-          Duplicate
-        </Button>
-        <IconButton
-          label="Delete selection"
-          onClick={deleteSelection}
-          disabled={selection.length === 0}
-        >
-          ⌫
-        </IconButton>
         <span className="hidden text-xs text-muted lg:inline">
           {playground.frames.length} {playground.frames.length === 1 ? "frame" : "frames"} ·{" "}
           {playground.layers.length} text
@@ -926,6 +1209,8 @@ export function PlaygroundPanel() {
             {playground.frames.map((frame) => {
               const rect = rectFor(frame);
               const active = selection.includes(frame.id);
+              if (frame.hidden) return null;
+              const spin = frame.rotation ? `rotate(${frame.rotation}deg)` : undefined;
               return (
                 <div key={frame.id}>
                   <button
@@ -942,6 +1227,7 @@ export function PlaygroundPanel() {
                     }}
                     onPointerDown={(event) => onNodePointerDown(event, frame.id)}
                   >
+                    {frame.locked ? "🔒 " : ""}
                     {frame.name}
                     <span className="ml-2 text-[10px] font-normal opacity-70">
                       {Math.round(rect.width)} × {Math.round(rect.height)}
@@ -955,6 +1241,9 @@ export function PlaygroundPanel() {
                       width: rect.width,
                       height: rect.height,
                       background: frame.background,
+                      opacity: frame.opacity,
+                      transform: spin,
+                      pointerEvents: frame.locked ? "none" : undefined,
                       borderRadius:
                         frame.shape === "ellipse"
                           ? "50%"
@@ -966,9 +1255,10 @@ export function PlaygroundPanel() {
                     onPointerDown={(event) => onNodePointerDown(event, frame.id)}
                     aria-label={`${frame.name} frame`}
                   />
-                  {active && selection.length === 1 && tool === "move" && (
+                  {active && selection.length === 1 && tool === "move" && !frame.locked && (
                     <ResizeHandles
                       rect={rect}
+                      rotation={frame.rotation}
                       zoom={view.zoom}
                       onStart={(event, handle) =>
                         onHandlePointerDown(
@@ -976,6 +1266,7 @@ export function PlaygroundPanel() {
                           frame.id,
                           handle,
                           rect,
+                          frame.rotation,
                           MIN_FRAME_SIZE,
                           MIN_FRAME_SIZE
                         )
@@ -990,6 +1281,7 @@ export function PlaygroundPanel() {
               const rect = rectFor(layer);
               const active = selection.includes(layer.id);
               const editing = editingId === layer.id;
+              if (layer.hidden) return null;
               return (
                 <div key={layer.id}>
                   <div
@@ -1007,6 +1299,9 @@ export function PlaygroundPanel() {
                       lineHeight: layer.lineHeight,
                       letterSpacing: `${layer.letterSpacing}em`,
                       textAlign: layer.textAlign,
+                      opacity: layer.opacity,
+                      transform: layer.rotation ? `rotate(${layer.rotation}deg)` : undefined,
+                      pointerEvents: layer.locked ? "none" : undefined,
                       overflow: "hidden",
                       touchAction: "none",
                       boxShadow: active ? `0 0 0 ${1.5 / view.zoom}px #2563eb` : undefined,
@@ -1047,25 +1342,54 @@ export function PlaygroundPanel() {
                   >
                     {layer.text}
                   </div>
-                  {active && selection.length === 1 && !editing && tool === "move" && (
-                    <ResizeHandles
-                      rect={rect}
-                      zoom={view.zoom}
-                      onStart={(event, handle) =>
-                        onHandlePointerDown(
-                          event,
-                          layer.id,
-                          handle,
-                          rect,
-                          MIN_LAYER_WIDTH,
-                          MIN_LAYER_HEIGHT
-                        )
-                      }
-                    />
-                  )}
+                  {active &&
+                    selection.length === 1 &&
+                    !editing &&
+                    tool === "move" &&
+                    !layer.locked && (
+                      <ResizeHandles
+                        rect={rect}
+                        rotation={layer.rotation}
+                        zoom={view.zoom}
+                        onStart={(event, handle) =>
+                          onHandlePointerDown(
+                            event,
+                            layer.id,
+                            handle,
+                            rect,
+                            layer.rotation,
+                            MIN_LAYER_WIDTH,
+                            MIN_LAYER_HEIGHT
+                          )
+                        }
+                      />
+                    )}
                 </div>
               );
             })}
+
+            {guides.map((guide, index) => (
+              <div
+                key={`${guide.axis}-${guide.position}-${index}`}
+                data-testid="snap-guide"
+                className="pointer-events-none absolute bg-brand-600"
+                style={
+                  guide.axis === "x"
+                    ? {
+                        left: guide.position,
+                        top: guide.start,
+                        width: Math.max(1 / view.zoom, 1 / view.zoom),
+                        height: guide.end - guide.start,
+                      }
+                    : {
+                        left: guide.start,
+                        top: guide.position,
+                        width: guide.end - guide.start,
+                        height: Math.max(1 / view.zoom, 1 / view.zoom),
+                      }
+                }
+              />
+            ))}
 
             {drawRect && (
               <div
@@ -1095,10 +1419,104 @@ export function PlaygroundPanel() {
             />
           )}
 
-          <div className="pointer-events-none absolute bottom-3 left-3 hidden rounded-md border border-black/10 bg-white/90 px-2.5 py-1.5 text-[10px] font-medium text-muted shadow-sm backdrop-blur md:block">
-            {tool === "move"
-              ? "Scroll to pan · ⌘/ctrl + scroll to zoom · Space + drag to grab · Drag to marquee · Resize from any edge or corner (⇧ ratio, ⌥ centre) · V move · T text · F frame · O ellipse · 1 fit"
-              : `Drag anywhere to draw a ${tool === "text" ? "text box" : tool} at any size · ⇧ square · ⌥ from centre · click for a default · Esc to cancel`}
+          {/* Floating dock: the tools are the primary action here, so they sit
+              over the canvas rather than in the panel header. */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-4 flex flex-col items-center gap-2 px-3">
+            {tool !== "move" && !shortcutsOpen && (
+              <p className="pointer-events-none rounded-full bg-canvas/90 px-3 py-1 text-[11px] font-medium text-white shadow-modal backdrop-blur">
+                Drag to draw a {tool === "text" ? "text box" : tool} at any size · ⇧ square · ⌥ from
+                centre · Esc to cancel
+              </p>
+            )}
+
+            {shortcutsOpen && (
+              <div className="pointer-events-auto max-h-[46vh] w-[min(92vw,560px)] overflow-y-auto rounded-card border border-canvas-line bg-canvas/95 p-4 text-white shadow-modal backdrop-blur ts-scroll">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                    Shortcuts
+                  </h3>
+                  <button
+                    onClick={() => setShortcutsOpen(false)}
+                    aria-label="Close shortcuts"
+                    className="grid h-6 w-6 place-items-center rounded text-gray-400 hover:bg-canvas-panel hover:text-white"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+                  {SHORTCUTS.map((section) => (
+                    <div key={section.group}>
+                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-brand-500">
+                        {section.group}
+                      </p>
+                      <dl className="space-y-1">
+                        {section.items.map(([keys, action]) => (
+                          <div key={keys} className="flex items-baseline justify-between gap-3">
+                            <dt className="shrink-0 font-mono text-[11px] text-gray-300">{keys}</dt>
+                            <dd className="min-w-0 truncate text-[11px] text-gray-400">{action}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="pointer-events-auto flex items-center gap-0.5 rounded-xl border border-canvas-line bg-canvas/95 p-1.5 shadow-modal backdrop-blur">
+              {TOOLS.map(({ label, value, key, Icon }) => (
+                <DockButton
+                  key={value}
+                  label={`${label} tool`}
+                  hint={key}
+                  active={tool === value}
+                  onClick={() => setTool(value)}
+                >
+                  <Icon />
+                </DockButton>
+              ))}
+
+              <DockDivider />
+
+              <DockButton
+                label="Snap to objects"
+                hint="S"
+                active={snapEnabled}
+                onClick={() => setSnapEnabled((current) => !current)}
+              >
+                <MagnetIcon />
+              </DockButton>
+
+              <DockDivider />
+
+              <DockButton
+                label="Duplicate selection"
+                hint="⌘D"
+                disabled={selection.length === 0}
+                onClick={duplicateSelection}
+              >
+                <DuplicateIcon />
+              </DockButton>
+              <DockButton
+                label="Delete selection"
+                hint="⌫"
+                disabled={selection.length === 0}
+                onClick={deleteSelection}
+              >
+                <TrashIcon />
+              </DockButton>
+
+              <DockDivider />
+
+              <DockButton
+                label="Shortcuts"
+                hint="?"
+                active={shortcutsOpen}
+                onClick={() => setShortcutsOpen((open) => !open)}
+              >
+                <KeyboardIcon />
+              </DockButton>
+            </div>
           </div>
         </div>
 
@@ -1158,16 +1576,29 @@ const HANDLE_LABELS: Record<PlaygroundHandle, string> = {
 
 function ResizeHandles({
   rect,
+  rotation,
   zoom,
   onStart,
 }: {
   rect: PlaygroundRect;
+  rotation: number;
   zoom: number;
   onStart: (event: React.PointerEvent<HTMLElement>, handle: PlaygroundHandle) => void;
 }) {
   const size = 10 / zoom;
   return (
-    <>
+    // Rotated about the same centre as the node, so the handles stay on its
+    // corners and edges rather than on its upright bounding box.
+    <div
+      className="pointer-events-none absolute"
+      style={{
+        left: rect.x,
+        top: rect.y,
+        width: rect.width,
+        height: rect.height,
+        transform: rotation ? `rotate(${rotation}deg)` : undefined,
+      }}
+    >
       {PLAYGROUND_HANDLES.map((handle) => {
         const spot = HANDLE_POSITIONS[handle];
         const corner = handle.length === 2;
@@ -1180,10 +1611,10 @@ function ResizeHandles({
             key={handle}
             role="button"
             aria-label={`Resize ${HANDLE_LABELS[handle]}`}
-            className="absolute z-10"
+            className="pointer-events-auto absolute z-10"
             style={{
-              left: rect.x + spot.dx * rect.width - width / 2,
-              top: rect.y + spot.dy * rect.height - height / 2,
+              left: spot.dx * rect.width - width / 2,
+              top: spot.dy * rect.height - height / 2,
               width,
               height,
               background: corner ? "#ffffff" : "transparent",
@@ -1196,12 +1627,14 @@ function ResizeHandles({
           />
         );
       })}
-    </>
+    </div>
   );
 }
 
 type InspectorProps = {
   doc: PlaygroundDocument;
+  selectedNodes: PlaygroundNodeBase[];
+  activeNode: PlaygroundNodeBase | null;
   selectedLayers: PlaygroundTextLayer[];
   activeLayer: PlaygroundTextLayer | null;
   activeFrame: PlaygroundFrame | null;
@@ -1210,6 +1643,10 @@ type InspectorProps = {
   onPatchLayers: (patch: Partial<PlaygroundTextLayer>, coalesce?: boolean) => void;
   onPatchFrame: (id: string, patch: Partial<PlaygroundFrame>, coalesce?: boolean) => void;
   onFitFrame: (id: string) => void;
+  onPatchNodes: (patch: { rotation?: number; opacity?: number }, coalesce?: boolean) => void;
+  onToggleFlag: (flag: "locked" | "hidden") => void;
+  onSelectFlag: (id: string, flag: "locked" | "hidden") => void;
+  onDistribute: (axis: PlaygroundDistribute) => void;
   onAlign: (alignment: PlaygroundAlignment) => void;
   onReorder: (move: PlaygroundLayerMove) => void;
   onDelete: () => void;
@@ -1217,6 +1654,8 @@ type InspectorProps = {
 
 function Inspector({
   doc,
+  selectedNodes,
+  activeNode,
   selectedLayers,
   activeLayer,
   activeFrame,
@@ -1225,6 +1664,10 @@ function Inspector({
   onPatchLayers,
   onPatchFrame,
   onFitFrame,
+  onPatchNodes,
+  onToggleFlag,
+  onSelectFlag,
+  onDistribute,
   onAlign,
   onReorder,
   onDelete,
@@ -1236,8 +1679,127 @@ function Inspector({
   const primary = selectedLayers[0] ?? null;
   const shares = <K extends keyof PlaygroundTextLayer>(key: K) =>
     selectedLayers.every((layer) => layer[key] === primary?.[key]);
+  const anyLocked = selectedNodes.some((node) => node.locked);
+  const anyHidden = selectedNodes.some((node) => node.hidden);
+
   return (
     <div className="min-h-0 flex-1 overflow-y-auto ts-scroll">
+      {selectedNodes.length > 0 && (
+        <InspectorSection
+          title={selectedNodes.length > 1 ? `Object · ${selectedNodes.length}` : "Object"}
+        >
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Rotation (°)">
+                <NumberInput
+                  value={activeNode?.rotation ?? 0}
+                  min={-180}
+                  max={180}
+                  onChange={(rotation) => onPatchNodes({ rotation })}
+                />
+              </Field>
+              <Field label="Opacity (%)">
+                <NumberInput
+                  value={Math.round((activeNode?.opacity ?? 1) * 100)}
+                  min={0}
+                  max={100}
+                  onChange={(value) => onPatchNodes({ opacity: value / 100 })}
+                />
+              </Field>
+            </div>
+            <FieldGroup label="Rotate by">
+              <div className="grid grid-cols-4 gap-1">
+                {[-90, -15, 15, 90].map((step) => (
+                  <button
+                    key={step}
+                    onClick={() =>
+                      onPatchNodes({ rotation: (activeNode?.rotation ?? 0) + step }, false)
+                    }
+                    className="h-8 rounded-md border border-line bg-white text-[10px] text-muted hover:bg-surface hover:text-ink"
+                  >
+                    {step > 0 ? `+${step}` : step}
+                  </button>
+                ))}
+              </div>
+            </FieldGroup>
+            <FieldGroup label="Align">
+              <div className="grid grid-cols-3 gap-1">
+                {(
+                  [
+                    ["left", "Left"],
+                    ["center-x", "H center"],
+                    ["right", "Right"],
+                    ["top", "Top"],
+                    ["center-y", "V center"],
+                    ["bottom", "Bottom"],
+                  ] as [PlaygroundAlignment, string][]
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    onClick={() => onAlign(value)}
+                    className="h-8 rounded-md border border-line bg-white px-1 text-[10px] text-muted hover:bg-surface hover:text-ink"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-[10px] leading-relaxed text-muted">
+                {selectedNodes.length > 1
+                  ? "Aligns the selection to its own bounds."
+                  : "Aligns to the frame this sits on."}
+              </p>
+            </FieldGroup>
+            <FieldGroup label="Distribute">
+              <div className="grid grid-cols-2 gap-1">
+                {(
+                  [
+                    ["horizontal", "Horizontal"],
+                    ["vertical", "Vertical"],
+                  ] as [PlaygroundDistribute, string][]
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    onClick={() => onDistribute(value)}
+                    disabled={selectedNodes.length < 3}
+                    className="h-8 rounded-md border border-line bg-white text-[10px] text-muted hover:bg-surface hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </FieldGroup>
+            <FieldGroup label="Order">
+              <div className="grid grid-cols-4 gap-1">
+                {(["front", "forward", "backward", "back"] as PlaygroundLayerMove[]).map((move) => (
+                  <button
+                    key={move}
+                    onClick={() => onReorder(move)}
+                    disabled={!activeNode}
+                    className="h-8 rounded-md border border-line bg-white text-[10px] capitalize text-muted hover:bg-surface hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    {move}
+                  </button>
+                ))}
+              </div>
+            </FieldGroup>
+            <div className="grid grid-cols-2 gap-1">
+              <button
+                onClick={() => onToggleFlag("locked")}
+                className={`h-8 rounded-md border text-[10px] ${anyLocked ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line bg-white text-muted hover:bg-surface hover:text-ink"}`}
+              >
+                {anyLocked ? "Unlock" : "Lock"}
+              </button>
+              <button
+                onClick={() => onToggleFlag("hidden")}
+                className={`h-8 rounded-md border text-[10px] ${anyHidden ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line bg-white text-muted hover:bg-surface hover:text-ink"}`}
+              >
+                {anyHidden ? "Show" : "Hide"}
+              </button>
+            </div>
+          </div>
+        </InspectorSection>
+      )}
+
       {activeFrame ? (
         <InspectorSection title="Frame">
           <div className="space-y-3">
@@ -1454,45 +2016,6 @@ function Inspector({
                 ))}
               </div>
             </FieldGroup>
-            <FieldGroup label="Align inside frame">
-              <div className="grid grid-cols-3 gap-1">
-                {(
-                  [
-                    ["left", "Left"],
-                    ["center-x", "H center"],
-                    ["right", "Right"],
-                    ["top", "Top"],
-                    ["center-y", "V center"],
-                    ["bottom", "Bottom"],
-                  ] as [PlaygroundAlignment, string][]
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    onClick={() => onAlign(value)}
-                    className="h-8 rounded-md border border-line bg-white px-1 text-[10px] text-muted hover:bg-surface hover:text-ink"
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </FieldGroup>
-            {activeLayer && (
-              <FieldGroup label="Layer order">
-                <div className="grid grid-cols-2 gap-1">
-                  {(["front", "forward", "backward", "back"] as PlaygroundLayerMove[]).map(
-                    (move) => (
-                      <button
-                        key={move}
-                        onClick={() => onReorder(move)}
-                        className="h-8 rounded-md border border-line bg-white text-[10px] capitalize text-muted hover:bg-surface hover:text-ink"
-                      >
-                        {move}
-                      </button>
-                    )
-                  )}
-                </div>
-              </FieldGroup>
-            )}
           </div>
         )}
       </InspectorSection>
@@ -1506,7 +2029,10 @@ function Inspector({
                 caption={`${frame.shape === "ellipse" ? "Ellipse" : "Rect"} · ${Math.round(frame.width)} × ${Math.round(frame.height)}`}
                 glyph={frame.shape === "ellipse" ? "◯" : "▢"}
                 selected={selection.includes(frame.id)}
+                locked={frame.locked}
+                hidden={frame.hidden}
                 onSelect={(additive) => onSelect(frame.id, additive)}
+                onToggle={(flag) => onSelectFlag(frame.id, flag)}
               />
               <div className="ml-3 border-l border-line pl-2">
                 {layersInFrame(doc, frame.id).map((layer) => (
@@ -1516,7 +2042,10 @@ function Inspector({
                     caption={layer.text.replace(/\n/g, " ")}
                     glyph="T"
                     selected={selection.includes(layer.id)}
+                    locked={layer.locked}
+                    hidden={layer.hidden}
                     onSelect={(additive) => onSelect(layer.id, additive)}
+                    onToggle={(flag) => onSelectFlag(layer.id, flag)}
                   />
                 ))}
                 {layersInFrame(doc, frame.id).length === 0 && (
@@ -1537,7 +2066,10 @@ function Inspector({
                   caption={layer.text.replace(/\n/g, " ")}
                   glyph="T"
                   selected={selection.includes(layer.id)}
+                  locked={layer.locked}
+                  hidden={layer.hidden}
                   onSelect={(additive) => onSelect(layer.id, additive)}
+                  onToggle={(flag) => onSelectFlag(layer.id, flag)}
                 />
               ))}
             </div>
@@ -1558,27 +2090,53 @@ function LayerRow({
   caption,
   glyph,
   selected,
+  locked,
+  hidden,
   onSelect,
+  onToggle,
 }: {
   label: string;
   caption: string;
   glyph: string;
   selected: boolean;
+  locked: boolean;
+  hidden: boolean;
   onSelect: (additive: boolean) => void;
+  onToggle: (flag: "locked" | "hidden") => void;
 }) {
   return (
-    <button
-      onClick={(event) => onSelect(event.shiftKey)}
-      className={`flex w-full items-center gap-2 rounded-md border px-2.5 py-2 text-left ${selected ? "border-brand-600 bg-brand-50" : "border-transparent hover:border-line hover:bg-white"}`}
+    <div
+      className={`group flex w-full items-center gap-2 rounded-md border px-2.5 py-2 text-left ${selected ? "border-brand-600 bg-brand-50" : "border-transparent hover:border-line hover:bg-white"}`}
     >
-      <span className="grid h-6 w-6 shrink-0 place-items-center rounded bg-white font-serif text-xs font-bold text-ink shadow-sm">
-        {glyph}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs font-medium text-ink">{label}</span>
-        <span className="block truncate text-[10px] text-muted">{caption}</span>
-      </span>
-    </button>
+      <button
+        onClick={(event) => onSelect(event.shiftKey)}
+        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+      >
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded bg-white font-serif text-xs font-bold text-ink shadow-sm">
+          {glyph}
+        </span>
+        <span className={`min-w-0 flex-1 ${hidden ? "opacity-50" : ""}`}>
+          <span className="block truncate text-xs font-medium text-ink">{label}</span>
+          <span className="block truncate text-[10px] text-muted">{caption}</span>
+        </span>
+      </button>
+      {/* Always rendered so they stay reachable by keyboard; only the resting
+          opacity changes on hover. */}
+      <button
+        aria-label={hidden ? `Show ${label}` : `Hide ${label}`}
+        onClick={() => onToggle("hidden")}
+        className={`shrink-0 rounded px-1 text-[11px] leading-none text-muted hover:text-ink ${hidden || selected ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus:opacity-100"}`}
+      >
+        {hidden ? "🙈" : "👁"}
+      </button>
+      <button
+        aria-label={locked ? `Unlock ${label}` : `Lock ${label}`}
+        onClick={() => onToggle("locked")}
+        className={`shrink-0 rounded px-1 text-[11px] leading-none text-muted hover:text-ink ${locked || selected ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus:opacity-100"}`}
+      >
+        {locked ? "🔒" : "🔓"}
+      </button>
+    </div>
   );
 }
 

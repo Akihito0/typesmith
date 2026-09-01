@@ -6,6 +6,9 @@ import {
   alignPlaygroundLayer,
   createPlaygroundFrame,
   createPlaygroundTextLayer,
+  alignPlaygroundNodes,
+  copyPlaygroundNodes,
+  distributePlaygroundNodes,
   drawnRect,
   duplicatePlaygroundNodes,
   fitFrameToContents,
@@ -17,9 +20,16 @@ import {
   patchPlaygroundNodes,
   playgroundBounds,
   playgroundNodesBounds,
+  pastePlaygroundNodes,
   removePlaygroundNodes,
   reorderPlaygroundLayer,
+  reorderPlaygroundNode,
   resizePlaygroundRect,
+  rotateDelta,
+  rotatedBounds,
+  setPlaygroundNodeFlags,
+  snapRect,
+  snapTargets,
   updatePlaygroundFrame,
   updatePlaygroundLayers,
   type PlaygroundDocument,
@@ -328,5 +338,207 @@ describe("fitFrameToContents", () => {
       layers: [],
     };
     expect(fitFrameToContents(document, "f")).toBe(document);
+  });
+});
+
+describe("rotation geometry", () => {
+  const rect = { x: 0, y: 0, width: 200, height: 100 };
+
+  it("leaves an unrotated rect alone", () => {
+    expect(rotatedBounds(rect, 0)).toEqual(rect);
+  });
+
+  it("swaps the axes at a quarter turn, about the same centre", () => {
+    const turned = rotatedBounds(rect, 90);
+    expect(turned.width).toBeCloseTo(100, 6);
+    expect(turned.height).toBeCloseTo(200, 6);
+    expect(turned.x + turned.width / 2).toBeCloseTo(rect.x + rect.width / 2, 6);
+    expect(turned.y + turned.height / 2).toBeCloseTo(rect.y + rect.height / 2, 6);
+  });
+
+  it("grows the box on the diagonal", () => {
+    const turned = rotatedBounds({ x: 0, y: 0, width: 100, height: 100 }, 45);
+    expect(turned.width).toBeCloseTo(Math.SQRT2 * 100, 6);
+  });
+
+  it("maps a drag into the node's own axes", () => {
+    // At 90°, dragging right in screen space pushes "up" in the node's frame.
+    const local = rotateDelta(10, 0, 90);
+    expect(local.dx).toBeCloseTo(0, 6);
+    expect(local.dy).toBeCloseTo(-10, 6);
+    expect(rotateDelta(10, 5, 0)).toEqual({ dx: 10, dy: 5 });
+  });
+
+  it("wraps rather than clamps, so 370 and -350 agree", () => {
+    const a = createPlaygroundFrame({ rotation: 370 });
+    const b = createPlaygroundFrame({ rotation: -350 });
+    expect(a.rotation).toBeCloseTo(10, 6);
+    expect(b.rotation).toBeCloseTo(10, 6);
+    expect(createPlaygroundFrame({ rotation: 190 }).rotation).toBeCloseTo(-170, 6);
+  });
+
+  it("counts a rotated node's real extent in the canvas bounds", () => {
+    const document: PlaygroundDocument = {
+      frames: [
+        createPlaygroundFrame({ id: "f", x: 0, y: 0, width: 200, height: 100, rotation: 90 }),
+      ],
+      layers: [],
+    };
+    expect(playgroundBounds(document).width).toBeCloseTo(100, 6);
+    expect(playgroundBounds(document).height).toBeCloseTo(200, 6);
+  });
+});
+
+describe("snapping", () => {
+  const target = { x: 100, y: 100, width: 200, height: 200 };
+
+  it("pulls a near edge into line and reports a guide", () => {
+    const result = snapRect({ x: 103, y: 400, width: 50, height: 50 }, [target]);
+    expect(result.rect.x).toBe(100);
+    expect(result.guides.some((g) => g.axis === "x" && g.position === 100)).toBe(true);
+  });
+
+  it("snaps centres, not just edges", () => {
+    // Target centre is 200; a 50-wide rect centres there from x = 175.
+    const result = snapRect({ x: 173, y: 400, width: 50, height: 50 }, [target]);
+    expect(result.rect.x).toBe(175);
+  });
+
+  it("leaves a rect alone once it is beyond tolerance", () => {
+    const rect = { x: 140, y: 400, width: 50, height: 50 };
+    const result = snapRect(rect, [target]);
+    expect(result.rect).toEqual(rect);
+    expect(result.guides).toHaveLength(0);
+  });
+
+  it("snaps each axis independently", () => {
+    const result = snapRect({ x: 103, y: 297, width: 50, height: 50 }, [target]);
+    expect(result.rect.x).toBe(100);
+    expect(result.rect.y).toBe(300);
+    expect(result.guides).toHaveLength(2);
+  });
+
+  it("does not offer the dragged node or hidden nodes as targets", () => {
+    const document: PlaygroundDocument = {
+      frames: [
+        createPlaygroundFrame({ id: "f1" }),
+        createPlaygroundFrame({ id: "f2", hidden: true }),
+      ],
+      layers: [createPlaygroundTextLayer({ id: "t1" })],
+    };
+    const ids = snapTargets(document, ["f1"]).length;
+    expect(ids).toBe(1); // f1 excluded, f2 hidden, t1 remains
+  });
+});
+
+describe("align and distribute", () => {
+  function spread(): PlaygroundDocument {
+    return {
+      frames: [],
+      layers: [
+        createPlaygroundTextLayer({ id: "a", x: 0, y: 0, width: 100, height: 50 }),
+        createPlaygroundTextLayer({ id: "b", x: 250, y: 80, width: 100, height: 50 }),
+        createPlaygroundTextLayer({ id: "c", x: 500, y: 160, width: 100, height: 50 }),
+      ],
+    };
+  }
+
+  it("aligns a multi-selection to its own bounds", () => {
+    const next = alignPlaygroundNodes(spread(), ["a", "b", "c"], "left");
+    expect(next.layers.map((l) => l.x)).toEqual([0, 0, 0]);
+  });
+
+  it("centres a multi-selection on the selection's midline", () => {
+    const next = alignPlaygroundNodes(spread(), ["a", "b", "c"], "center-y");
+    const centres = next.layers.map((l) => l.y + l.height / 2);
+    expect(new Set(centres).size).toBe(1);
+  });
+
+  it("evens the gaps and leaves the outer two put", () => {
+    const next = distributePlaygroundNodes(spread(), ["a", "b", "c"], "horizontal");
+    const [a, b, c] = next.layers;
+    expect(a.x).toBe(0);
+    expect(c.x).toBe(500);
+    expect(b.x - (a.x + a.width)).toBe(c.x - (b.x + b.width));
+  });
+
+  it("needs three nodes before distributing means anything", () => {
+    const document = spread();
+    expect(distributePlaygroundNodes(document, ["a", "b"], "horizontal")).toBe(document);
+  });
+
+  it("never moves a locked node", () => {
+    const document = setPlaygroundNodeFlags(spread(), ["b"], { locked: true });
+    const next = alignPlaygroundNodes(document, ["a", "b", "c"], "left");
+    expect(next.layers.find((l) => l.id === "b")?.x).toBe(250);
+  });
+});
+
+describe("lock, hide, and z-order", () => {
+  it("flags any mix of frames and text", () => {
+    const document: PlaygroundDocument = {
+      frames: [createPlaygroundFrame({ id: "f" })],
+      layers: [createPlaygroundTextLayer({ id: "t" })],
+    };
+    const next = setPlaygroundNodeFlags(document, ["f", "t"], { hidden: true });
+    expect(next.frames[0].hidden).toBe(true);
+    expect(next.layers[0].hidden).toBe(true);
+  });
+
+  it("reorders frames among frames, not into the text list", () => {
+    const document: PlaygroundDocument = {
+      frames: [createPlaygroundFrame({ id: "f1" }), createPlaygroundFrame({ id: "f2" })],
+      layers: [createPlaygroundTextLayer({ id: "t" })],
+    };
+    const next = reorderPlaygroundNode(document, "f1", "front");
+    expect(next.frames.map((f) => f.id)).toEqual(["f2", "f1"]);
+    expect(next.layers).toHaveLength(1);
+  });
+
+  it("still routes text through the layer reorder", () => {
+    const document: PlaygroundDocument = {
+      frames: [],
+      layers: [createPlaygroundTextLayer({ id: "t1" }), createPlaygroundTextLayer({ id: "t2" })],
+    };
+    expect(reorderPlaygroundNode(document, "t1", "front").layers.map((l) => l.id)).toEqual([
+      "t2",
+      "t1",
+    ]);
+  });
+});
+
+describe("copy and paste", () => {
+  function doc(): PlaygroundDocument {
+    return {
+      frames: [createPlaygroundFrame({ id: "f", x: 0, y: 0, width: 400, height: 400 })],
+      layers: [
+        createPlaygroundTextLayer({ id: "inside", x: 50, y: 50, width: 100, height: 40 }),
+        createPlaygroundTextLayer({ id: "loose", x: 900, y: 900, width: 100, height: 40 }),
+      ],
+    };
+  }
+
+  it("carries the text sitting on a copied frame", () => {
+    const clip = copyPlaygroundNodes(doc(), ["f"]);
+    expect(clip.frames).toHaveLength(1);
+    expect(clip.layers.map((l) => l.id)).toEqual(["inside"]);
+  });
+
+  it("pastes with fresh ids and an offset", () => {
+    const source = doc();
+    const clip = copyPlaygroundNodes(source, ["loose"]);
+    const { document: next, ids } = pastePlaygroundNodes(source, clip, 32);
+    expect(next.layers).toHaveLength(3);
+    expect(ids[0]).not.toBe("loose");
+    const pasted = next.layers.find((l) => l.id === ids[0]);
+    expect(pasted?.x).toBe(932);
+  });
+
+  it("pasting twice keeps making new nodes rather than replacing", () => {
+    const source = doc();
+    const clip = copyPlaygroundNodes(source, ["loose"]);
+    const once = pastePlaygroundNodes(source, clip);
+    const twice = pastePlaygroundNodes(once.document, clip);
+    expect(twice.document.layers).toHaveLength(4);
   });
 });

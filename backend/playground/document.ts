@@ -13,14 +13,25 @@ export type PlaygroundTextAlign = "left" | "center" | "right";
 export type PlaygroundShape = "rectangle" | "ellipse";
 export const PLAYGROUND_SHAPES: PlaygroundShape[] = ["rectangle", "ellipse"];
 
-export interface PlaygroundTextLayer {
+/** What every node carries, whatever its kind. */
+export interface PlaygroundNodeBase {
   id: string;
   name: string;
-  text: string;
   x: number;
   y: number;
   width: number;
   height: number;
+  /** Degrees clockwise about the node's own centre. */
+  rotation: number;
+  /** 0–1, applied to the whole node — fill and text alike. */
+  opacity: number;
+  /** Locked nodes still render, but ignore pointer input and marquee. */
+  locked: boolean;
+  hidden: boolean;
+}
+
+export interface PlaygroundTextLayer extends PlaygroundNodeBase {
+  text: string;
   fontId: string;
   fontSize: number;
   fontWeight: number;
@@ -30,18 +41,14 @@ export interface PlaygroundTextLayer {
   textAlign: PlaygroundTextAlign;
 }
 
-export interface PlaygroundFrame {
-  id: string;
-  name: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+export interface PlaygroundFrame extends PlaygroundNodeBase {
   background: string;
   shape: PlaygroundShape;
   /** Corner radius in px. Ignored while `shape` is "ellipse". */
   radius: number;
 }
+
+export type PlaygroundNode = PlaygroundTextLayer | PlaygroundFrame;
 
 export interface PlaygroundDocument {
   frames: PlaygroundFrame[];
@@ -58,6 +65,20 @@ export interface PlaygroundRect {
 export type PlaygroundAlignment = "left" | "center-x" | "right" | "top" | "center-y" | "bottom";
 export type PlaygroundLayerMove = "forward" | "backward" | "front" | "back";
 export type PlaygroundNodeType = "layer" | "frame";
+export type PlaygroundDistribute = "horizontal" | "vertical";
+
+/** One alignment line, drawn while a drag is snapped to something. */
+export interface PlaygroundGuide {
+  axis: "x" | "y";
+  /** Canvas coordinate of the line on the axis it is perpendicular to. */
+  position: number;
+  /** Extent along the other axis, so the line spans both nodes. */
+  start: number;
+  end: number;
+}
+
+/** How close (canvas px) an edge must come before it snaps. */
+export const SNAP_TOLERANCE = 6;
 
 /** Every edge and corner resizes, so a frame is free in one axis or both. */
 export type PlaygroundHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
@@ -75,151 +96,165 @@ export const MAX_LAYERS = 300;
 
 const MAX_COORD = 20000;
 
+// Declared as partials and built through the factories, so a new node
+// property picks up its default here too instead of having to be added to
+// every literal below.
+const DEFAULT_FRAMES: Partial<PlaygroundFrame>[] = [
+  {
+    id: "frame-hero",
+    name: "Hero",
+    x: 0,
+    y: 0,
+    width: 1200,
+    height: 800,
+    background: "#f4f1ea",
+    shape: "rectangle",
+    radius: 0,
+  },
+  {
+    id: "frame-square",
+    name: "Square",
+    x: 1320,
+    y: 0,
+    width: 720,
+    height: 720,
+    background: "#111827",
+    shape: "rectangle",
+    radius: 24,
+  },
+];
+
+const DEFAULT_LAYERS: Partial<PlaygroundTextLayer>[] = [
+  {
+    id: "playground-kicker",
+    name: "Kicker",
+    text: "TYPE STUDY / 01",
+    x: 80,
+    y: 76,
+    width: 520,
+    height: 36,
+    fontId: "ibm-plex-mono",
+    fontSize: 17,
+    fontWeight: 600,
+    lineHeight: 1.2,
+    letterSpacing: 0.14,
+    color: "#2563eb",
+    textAlign: "left",
+  },
+  {
+    id: "playground-heading",
+    name: "Headline",
+    text: "Make type\nmove people.",
+    x: 76,
+    y: 154,
+    width: 1040,
+    height: 260,
+    fontId: "space-grotesk",
+    fontSize: 112,
+    fontWeight: 700,
+    lineHeight: 0.92,
+    letterSpacing: -0.055,
+    color: "#111827",
+    textAlign: "left",
+  },
+  {
+    id: "playground-body",
+    name: "Body copy",
+    text: "A freeform canvas for testing hierarchy, rhythm, contrast, and the tiny decisions that make a type system feel alive.",
+    x: 80,
+    y: 520,
+    width: 610,
+    height: 140,
+    fontId: "inter",
+    fontSize: 27,
+    fontWeight: 400,
+    lineHeight: 1.45,
+    letterSpacing: -0.015,
+    color: "#374151",
+    textAlign: "left",
+  },
+  {
+    id: "playground-note",
+    name: "Canvas note",
+    text: "DOUBLE-CLICK TO EDIT\nDRAG TO COMPOSE",
+    x: 850,
+    y: 615,
+    width: 260,
+    height: 72,
+    fontId: "ibm-plex-mono",
+    fontSize: 13,
+    fontWeight: 500,
+    lineHeight: 1.5,
+    letterSpacing: 0.08,
+    color: "#6b7280",
+    textAlign: "right",
+  },
+  {
+    id: "playground-square-mark",
+    name: "Square headline",
+    text: "Set it\nloose.",
+    x: 1392,
+    y: 200,
+    width: 580,
+    height: 300,
+    fontId: "space-grotesk",
+    fontSize: 118,
+    fontWeight: 700,
+    lineHeight: 0.94,
+    letterSpacing: -0.05,
+    color: "#f9fafb",
+    textAlign: "left",
+  },
+  {
+    id: "playground-square-note",
+    name: "Square caption",
+    text: "SECOND FRAME · SAME CANVAS",
+    x: 1392,
+    y: 552,
+    width: 520,
+    height: 32,
+    fontId: "ibm-plex-mono",
+    fontSize: 14,
+    fontWeight: 500,
+    lineHeight: 1.4,
+    letterSpacing: 0.12,
+    color: "#9ca3af",
+    textAlign: "left",
+  },
+  {
+    id: "playground-loose",
+    name: "Loose note",
+    text: "Text can live outside any frame — the canvas is infinite.",
+    x: 80,
+    y: 880,
+    width: 900,
+    height: 60,
+    fontId: "inter",
+    fontSize: 30,
+    fontWeight: 500,
+    lineHeight: 1.3,
+    letterSpacing: -0.02,
+    color: "#9ca3af",
+    textAlign: "left",
+  },
+];
+
 export const DEFAULT_PLAYGROUND: PlaygroundDocument = {
-  frames: [
-    {
-      id: "frame-hero",
-      name: "Hero",
-      x: 0,
-      y: 0,
-      width: 1200,
-      height: 800,
-      background: "#f4f1ea",
-      shape: "rectangle",
-      radius: 0,
-    },
-    {
-      id: "frame-square",
-      name: "Square",
-      x: 1320,
-      y: 0,
-      width: 720,
-      height: 720,
-      background: "#111827",
-      shape: "rectangle",
-      radius: 24,
-    },
-  ],
-  layers: [
-    {
-      id: "playground-kicker",
-      name: "Kicker",
-      text: "TYPE STUDY / 01",
-      x: 80,
-      y: 76,
-      width: 520,
-      height: 36,
-      fontId: "ibm-plex-mono",
-      fontSize: 17,
-      fontWeight: 600,
-      lineHeight: 1.2,
-      letterSpacing: 0.14,
-      color: "#2563eb",
-      textAlign: "left",
-    },
-    {
-      id: "playground-heading",
-      name: "Headline",
-      text: "Make type\nmove people.",
-      x: 76,
-      y: 154,
-      width: 1040,
-      height: 260,
-      fontId: "space-grotesk",
-      fontSize: 112,
-      fontWeight: 700,
-      lineHeight: 0.92,
-      letterSpacing: -0.055,
-      color: "#111827",
-      textAlign: "left",
-    },
-    {
-      id: "playground-body",
-      name: "Body copy",
-      text: "A freeform canvas for testing hierarchy, rhythm, contrast, and the tiny decisions that make a type system feel alive.",
-      x: 80,
-      y: 520,
-      width: 610,
-      height: 140,
-      fontId: "inter",
-      fontSize: 27,
-      fontWeight: 400,
-      lineHeight: 1.45,
-      letterSpacing: -0.015,
-      color: "#374151",
-      textAlign: "left",
-    },
-    {
-      id: "playground-note",
-      name: "Canvas note",
-      text: "DOUBLE-CLICK TO EDIT\nDRAG TO COMPOSE",
-      x: 850,
-      y: 615,
-      width: 260,
-      height: 72,
-      fontId: "ibm-plex-mono",
-      fontSize: 13,
-      fontWeight: 500,
-      lineHeight: 1.5,
-      letterSpacing: 0.08,
-      color: "#6b7280",
-      textAlign: "right",
-    },
-    {
-      id: "playground-square-mark",
-      name: "Square headline",
-      text: "Set it\nloose.",
-      x: 1392,
-      y: 200,
-      width: 580,
-      height: 300,
-      fontId: "space-grotesk",
-      fontSize: 118,
-      fontWeight: 700,
-      lineHeight: 0.94,
-      letterSpacing: -0.05,
-      color: "#f9fafb",
-      textAlign: "left",
-    },
-    {
-      id: "playground-square-note",
-      name: "Square caption",
-      text: "SECOND FRAME · SAME CANVAS",
-      x: 1392,
-      y: 552,
-      width: 520,
-      height: 32,
-      fontId: "ibm-plex-mono",
-      fontSize: 14,
-      fontWeight: 500,
-      lineHeight: 1.4,
-      letterSpacing: 0.12,
-      color: "#9ca3af",
-      textAlign: "left",
-    },
-    {
-      id: "playground-loose",
-      name: "Loose note",
-      text: "Text can live outside any frame — the canvas is infinite.",
-      x: 80,
-      y: 880,
-      width: 900,
-      height: 60,
-      fontId: "inter",
-      fontSize: 30,
-      fontWeight: 500,
-      lineHeight: 1.3,
-      letterSpacing: -0.02,
-      color: "#9ca3af",
-      textAlign: "left",
-    },
-  ],
+  frames: DEFAULT_FRAMES.map((frame) => createPlaygroundFrame(frame)),
+  layers: DEFAULT_LAYERS.map((layer) => createPlaygroundTextLayer(layer)),
 };
 
 function finite(value: unknown, fallback: number, min: number, max: number): number {
   return typeof value === "number" && Number.isFinite(value)
     ? Math.min(max, Math.max(min, value))
     : fallback;
+}
+
+/** Rotation wraps rather than clamps, so 370 and -350 mean the same thing. */
+function normalizeRotation(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
+  const wrapped = ((value % 360) + 360) % 360;
+  return wrapped > 180 ? wrapped - 360 : wrapped;
 }
 
 function text(value: unknown, fallback: string): string {
@@ -262,6 +297,12 @@ export function createPlaygroundTextLayer(
     letterSpacing: partial.letterSpacing ?? -0.03,
     color: partial.color ?? "#111827",
     textAlign: partial.textAlign ?? "left",
+    // Normalised here, not just in the clamps, so a node is never constructed
+    // with a rotation or opacity the rest of the code would have to re-check.
+    rotation: normalizeRotation(partial.rotation ?? 0),
+    opacity: finite(partial.opacity, 1, 0, 1),
+    locked: partial.locked ?? false,
+    hidden: partial.hidden ?? false,
   };
 }
 
@@ -276,12 +317,22 @@ export function createPlaygroundFrame(partial: Partial<PlaygroundFrame> = {}): P
     background: partial.background ?? "#ffffff",
     shape: partial.shape ?? "rectangle",
     radius: partial.radius ?? 0,
+    // Normalised here, not just in the clamps, so a node is never constructed
+    // with a rotation or opacity the rest of the code would have to re-check.
+    rotation: normalizeRotation(partial.rotation ?? 0),
+    opacity: finite(partial.opacity, 1, 0, 1),
+    locked: partial.locked ?? false,
+    hidden: partial.hidden ?? false,
   };
 }
 
 function clampLayer(layer: PlaygroundTextLayer): PlaygroundTextLayer {
   return {
     ...layer,
+    rotation: normalizeRotation(layer.rotation),
+    opacity: finite(layer.opacity, 1, 0, 1),
+    locked: layer.locked === true,
+    hidden: layer.hidden === true,
     x: finite(layer.x, 0, -MAX_COORD, MAX_COORD),
     y: finite(layer.y, 0, -MAX_COORD, MAX_COORD),
     width: finite(layer.width, MIN_LAYER_WIDTH, MIN_LAYER_WIDTH, MAX_COORD),
@@ -298,6 +349,10 @@ function clampFrame(frame: PlaygroundFrame): PlaygroundFrame {
     y: finite(frame.y, 0, -MAX_COORD, MAX_COORD),
     width,
     height,
+    rotation: normalizeRotation(frame.rotation),
+    opacity: finite(frame.opacity, 1, 0, 1),
+    locked: frame.locked === true,
+    hidden: frame.hidden === true,
     shape: frame.shape === "ellipse" ? "ellipse" : "rectangle",
     // A radius past half the short side just rounds the shape fully, so cap it
     // there rather than letting the number drift away from what's drawn.
@@ -440,6 +495,98 @@ export function resizePlaygroundRect(
     width: Math.round(width),
     height: Math.round(height),
   };
+}
+
+/** Axis-aligned box that a rotated rect actually occupies. Used for
+ * zoom-to-fit and export, so a turned node isn't cropped. */
+export function rotatedBounds(rect: PlaygroundRect, rotation: number): PlaygroundRect {
+  if (!rotation) return rectOf(rect);
+  const radians = (rotation * Math.PI) / 180;
+  const cos = Math.abs(Math.cos(radians));
+  const sin = Math.abs(Math.sin(radians));
+  const width = rect.width * cos + rect.height * sin;
+  const height = rect.width * sin + rect.height * cos;
+  return {
+    x: rect.x + (rect.width - width) / 2,
+    y: rect.y + (rect.height - height) / 2,
+    width,
+    height,
+  };
+}
+
+/** Turn a screen-space drag into the node's own axes, so a rotated node
+ * resizes along its own edges rather than the canvas's. */
+export function rotateDelta(dx: number, dy: number, rotation: number): { dx: number; dy: number } {
+  if (!rotation) return { dx, dy };
+  const radians = (-rotation * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  return { dx: dx * cos - dy * sin, dy: dx * sin + dy * cos };
+}
+
+const EDGES = ["start", "center", "end"] as const;
+
+function axisPoints(rect: PlaygroundRect, axis: "x" | "y"): Record<string, number> {
+  const origin = axis === "x" ? rect.x : rect.y;
+  const size = axis === "x" ? rect.width : rect.height;
+  return { start: origin, center: origin + size / 2, end: origin + size };
+}
+
+/** Nudge a dragged rect onto the nearest edge or centre of anything else on the
+ * canvas, and report the lines to draw for it. Each axis snaps independently,
+ * and only within `tolerance` — beyond that the pointer wins. */
+export function snapRect(
+  rect: PlaygroundRect,
+  targets: PlaygroundRect[],
+  tolerance = SNAP_TOLERANCE
+): { rect: PlaygroundRect; guides: PlaygroundGuide[] } {
+  const guides: PlaygroundGuide[] = [];
+  const offset = { x: 0, y: 0 };
+
+  (["x", "y"] as const).forEach((axis) => {
+    const moving = axisPoints(rect, axis);
+    let best: { delta: number; position: number; target: PlaygroundRect } | null = null;
+
+    targets.forEach((target) => {
+      const fixed = axisPoints(target, axis);
+      EDGES.forEach((movingEdge) => {
+        EDGES.forEach((targetEdge) => {
+          const delta = fixed[targetEdge] - moving[movingEdge];
+          if (Math.abs(delta) > tolerance) return;
+          if (best && Math.abs(delta) >= Math.abs(best.delta)) return;
+          best = { delta, position: fixed[targetEdge], target };
+        });
+      });
+    });
+
+    if (!best) return;
+    const hit = best as { delta: number; position: number; target: PlaygroundRect };
+    offset[axis] = hit.delta;
+    // The guide runs along the *other* axis, spanning both rects so the
+    // relationship it represents is visible.
+    const other = axis === "x" ? "y" : "x";
+    const size = other === "x" ? "width" : "height";
+    guides.push({
+      axis,
+      position: hit.position,
+      start: Math.min(rect[other], hit.target[other]),
+      end: Math.max(rect[other] + rect[size], hit.target[other] + hit.target[size]),
+    });
+  });
+
+  return {
+    rect: { ...rect, x: rect.x + offset.x, y: rect.y + offset.y },
+    guides,
+  };
+}
+
+/** Every node's rect except the ones being dragged — the things worth
+ * snapping to. Hidden nodes are not on screen, so they don't attract. */
+export function snapTargets(document: PlaygroundDocument, excludeIds: string[]): PlaygroundRect[] {
+  const excluded = new Set(excludeIds);
+  return [...document.frames, ...document.layers]
+    .filter((node) => !excluded.has(node.id) && !node.hidden)
+    .map(rectOf);
 }
 
 /** The frame a layer belongs to: topmost frame containing the layer's centre. */
@@ -640,6 +787,186 @@ export function alignPlaygroundLayer(
   return updatePlaygroundLayer(document, id, patch);
 }
 
+/** Align a multi-selection to its own bounding box — the Figma behaviour when
+ * more than one thing is selected. A single layer instead aligns to the frame
+ * it sits on, which is what `alignPlaygroundLayer` does. */
+export function alignPlaygroundNodes(
+  document: PlaygroundDocument,
+  ids: string[],
+  alignment: PlaygroundAlignment
+): PlaygroundDocument {
+  if (ids.length === 1) return alignPlaygroundLayer(document, ids[0], alignment);
+  const bounds = playgroundNodesBounds(document, ids);
+  if (!bounds || ids.length === 0) return document;
+
+  const patches: Record<string, Partial<PlaygroundRect>> = {};
+  const place = (node: PlaygroundNodeBase) => {
+    if (node.locked) return;
+    if (alignment === "left") patches[node.id] = { x: bounds.x };
+    if (alignment === "center-x")
+      patches[node.id] = { x: bounds.x + (bounds.width - node.width) / 2 };
+    if (alignment === "right") patches[node.id] = { x: bounds.x + bounds.width - node.width };
+    if (alignment === "top") patches[node.id] = { y: bounds.y };
+    if (alignment === "center-y")
+      patches[node.id] = { y: bounds.y + (bounds.height - node.height) / 2 };
+    if (alignment === "bottom") patches[node.id] = { y: bounds.y + bounds.height - node.height };
+  };
+
+  const wanted = new Set(ids);
+  document.frames.forEach((frame) => wanted.has(frame.id) && place(frame));
+  document.layers.forEach((layer) => wanted.has(layer.id) && place(layer));
+  return patchPlaygroundNodes(document, patches);
+}
+
+/** Even the gaps between three or more nodes, leaving the outermost two put. */
+export function distributePlaygroundNodes(
+  document: PlaygroundDocument,
+  ids: string[],
+  axis: PlaygroundDistribute
+): PlaygroundDocument {
+  const wanted = new Set(ids);
+  const nodes: PlaygroundNodeBase[] = [...document.frames, ...document.layers].filter((node) =>
+    wanted.has(node.id)
+  );
+  if (nodes.length < 3) return document;
+
+  const along = axis === "horizontal" ? "x" : "y";
+  const size = axis === "horizontal" ? "width" : "height";
+  const sorted = [...nodes].sort((a, b) => a[along] - b[along]);
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  const span = last[along] + last[size] - first[along];
+  const occupied = sorted.reduce((total, node) => total + node[size], 0);
+  const gap = (span - occupied) / (sorted.length - 1);
+
+  const patches: Record<string, Partial<PlaygroundRect>> = {};
+  let cursor = first[along] + first[size] + gap;
+  sorted.slice(1, -1).forEach((node) => {
+    if (!node.locked) patches[node.id] = { [along]: Math.round(cursor) } as Partial<PlaygroundRect>;
+    cursor += node[size] + gap;
+  });
+  return patchPlaygroundNodes(document, patches);
+}
+
+/** Patch properties every node shares — rotation, opacity, name — across a
+ * mixed selection, clamping as it goes. Geometry belongs in
+ * `patchPlaygroundNodes`; this is for the rest of the base shape. */
+export function updatePlaygroundNodes(
+  document: PlaygroundDocument,
+  ids: string[],
+  patch: Partial<Pick<PlaygroundNodeBase, "rotation" | "opacity" | "name">>
+): PlaygroundDocument {
+  const wanted = new Set(ids);
+  return {
+    frames: document.frames.map((frame) =>
+      wanted.has(frame.id) ? clampFrame({ ...frame, ...patch }) : frame
+    ),
+    layers: document.layers.map((layer) =>
+      wanted.has(layer.id) ? clampLayer({ ...layer, ...patch }) : layer
+    ),
+  };
+}
+
+/** Toggle lock/hide on any mix of frames and text. */
+export function setPlaygroundNodeFlags(
+  document: PlaygroundDocument,
+  ids: string[],
+  patch: { locked?: boolean; hidden?: boolean }
+): PlaygroundDocument {
+  const wanted = new Set(ids);
+  const apply = <T extends PlaygroundNodeBase>(node: T): T =>
+    wanted.has(node.id) ? { ...node, ...patch } : node;
+  return {
+    frames: document.frames.map(apply),
+    layers: document.layers.map(apply),
+  };
+}
+
+/** Reorder either kind of node. Frames paint under text, so the two lists are
+ * ordered independently — a frame can only move among frames. */
+export function reorderPlaygroundNode(
+  document: PlaygroundDocument,
+  id: string,
+  move: PlaygroundLayerMove
+): PlaygroundDocument {
+  if (document.layers.some((layer) => layer.id === id)) {
+    return reorderPlaygroundLayer(document, id, move);
+  }
+  const from = document.frames.findIndex((frame) => frame.id === id);
+  if (from < 0) return document;
+  const last = document.frames.length - 1;
+  const to =
+    move === "front"
+      ? last
+      : move === "back"
+        ? 0
+        : move === "forward"
+          ? Math.min(last, from + 1)
+          : Math.max(0, from - 1);
+  if (from === to) return document;
+  const frames = [...document.frames];
+  const [frame] = frames.splice(from, 1);
+  frames.splice(to, 0, frame);
+  return { ...document, frames };
+}
+
+/** Copy the selection out of the document, for a later paste. Copying a frame
+ * takes the text sitting on it, matching what deleting a frame removes. */
+export function copyPlaygroundNodes(
+  document: PlaygroundDocument,
+  ids: string[]
+): { frames: PlaygroundFrame[]; layers: PlaygroundTextLayer[] } {
+  const wanted = new Set(ids);
+  const frames = document.frames.filter((frame) => wanted.has(frame.id));
+  const carried = new Set<string>();
+  frames.forEach((frame) =>
+    layersInFrame(document, frame.id).forEach((layer) => carried.add(layer.id))
+  );
+  const layers = document.layers.filter((layer) => wanted.has(layer.id) || carried.has(layer.id));
+  return {
+    frames: frames.map((frame) => ({ ...frame })),
+    layers: layers.map((layer) => ({ ...layer })),
+  };
+}
+
+/** Paste a clipboard back in, offset so the copy is visible and selectable,
+ * with fresh ids. Respects the document's node ceilings. */
+export function pastePlaygroundNodes(
+  document: PlaygroundDocument,
+  clipboard: { frames: PlaygroundFrame[]; layers: PlaygroundTextLayer[] },
+  offset = 32
+): { document: PlaygroundDocument; ids: string[] } {
+  const frames = [...document.frames];
+  const layers = [...document.layers];
+  const created: string[] = [];
+
+  clipboard.frames.forEach((frame) => {
+    if (frames.length >= MAX_FRAMES) return;
+    const copy = clampFrame({
+      ...frame,
+      id: newPlaygroundFrameId(),
+      x: frame.x + offset,
+      y: frame.y + offset,
+    });
+    frames.push(copy);
+    created.push(copy.id);
+  });
+
+  clipboard.layers.forEach((layer) => {
+    if (layers.length >= MAX_LAYERS) return;
+    const copy = clampLayer({
+      ...layer,
+      id: newPlaygroundLayerId(),
+      x: layer.x + offset,
+      y: layer.y + offset,
+    });
+    layers.push(copy);
+    created.push(copy.id);
+  });
+
+  return { document: { frames, layers }, ids: created };
+}
+
 export function resizePlaygroundFrame(
   document: PlaygroundDocument,
   id: string,
@@ -680,8 +1007,11 @@ function unionRects(rects: PlaygroundRect[]): PlaygroundRect | null {
 
 /** Bounding box of everything on the canvas — used for zoom-to-fit and export. */
 export function playgroundBounds(document: PlaygroundDocument): PlaygroundRect {
+  const boxes = [...document.frames, ...document.layers].map((node) =>
+    rotatedBounds(node, node.rotation)
+  );
   return (
-    unionRects([...document.frames.map(rectOf), ...document.layers.map(rectOf)]) ?? {
+    unionRects(boxes) ?? {
       x: 0,
       y: 0,
       width: 1200,
@@ -696,7 +1026,9 @@ export function playgroundNodesBounds(
 ): PlaygroundRect | null {
   const wanted = new Set(ids);
   return unionRects(
-    [...document.frames, ...document.layers].filter((node) => wanted.has(node.id)).map(rectOf)
+    [...document.frames, ...document.layers]
+      .filter((node) => wanted.has(node.id))
+      .map((node) => rotatedBounds(node, node.rotation))
   );
 }
 
@@ -719,6 +1051,10 @@ function normalizeFrame(raw: unknown, fallback: PlaygroundFrame): PlaygroundFram
     background: isHex(item.background) ? item.background : fallback.background,
     shape: item.shape === "ellipse" ? "ellipse" : "rectangle",
     radius: finite(item.radius, fallback.radius ?? 0, 0, MAX_FRAME_SIZE),
+    rotation: normalizeRotation(item.rotation),
+    opacity: finite(item.opacity, fallback.opacity ?? 1, 0, 1),
+    locked: item.locked === true,
+    hidden: item.hidden === true,
   });
 }
 
@@ -742,6 +1078,10 @@ function normalizeLayer(raw: unknown, fallback: PlaygroundTextLayer): Playground
     letterSpacing: finite(item.letterSpacing, fallback.letterSpacing, -0.2, 1),
     color: isHex(item.color) ? item.color : fallback.color,
     textAlign: align,
+    rotation: normalizeRotation(item.rotation),
+    opacity: finite(item.opacity, fallback.opacity ?? 1, 0, 1),
+    locked: item.locked === true,
+    hidden: item.hidden === true,
   });
 }
 
