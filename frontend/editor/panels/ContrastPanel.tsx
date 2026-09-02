@@ -55,7 +55,7 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-4 overflow-y-auto ts-scroll">
       {/* header card */}
-      <section className="rounded-card border border-line bg-white p-5 shadow-panel">
+      <section className="rounded-card border border-line bg-panel p-5 shadow-panel">
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-[15px] font-semibold text-ink">Color Contrast Checker</h2>
@@ -68,8 +68,8 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
               <span
                 className={`rounded-md border px-2.5 py-1 text-[11px] font-semibold ${
                   result.grade === "Fail"
-                    ? "border-fail/30 bg-red-50 text-fail"
-                    : "border-pass/30 bg-green-50 text-pass"
+                    ? "border-fail/30 bg-fail-50 text-fail"
+                    : "border-pass/30 bg-pass-50 text-pass"
                 }`}
               >
                 {result.grade === "Fail" ? "✕ FAIL" : `✓ ${result.grade} PASS`}
@@ -207,7 +207,7 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
       </section>
 
       {/* contrast matrix: every text color × every surface at a glance */}
-      <section className="rounded-card border border-line bg-white p-5 shadow-panel">
+      <section className="rounded-card border border-line bg-panel p-5 shadow-panel">
         <p className="text-[13px] font-semibold text-ink">Contrast Matrix</p>
         <p className="mt-0.5 text-[12px] text-muted">
           Every text color against every surface, graded at normal-text thresholds.
@@ -255,7 +255,7 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
           title="WCAG Standards"
           body="Level AA requires a contrast ratio of at least 4.5:1 for normal text and 3:1 for large text."
         />
-        <div className="rounded-card border border-line bg-white p-4 shadow-panel">
+        <div className="rounded-card border border-line bg-panel p-4 shadow-panel">
           <p className="text-[13px] font-semibold text-ink">Color Blindness</p>
           <p className="mt-1 text-[12px] leading-relaxed text-muted">
             Simulate protanopia, deuteranopia, and tritanopia.
@@ -263,7 +263,7 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
           <select
             value={cvd}
             onChange={(e) => setCvd(e.target.value as typeof cvd)}
-            className="mt-2.5 h-8 w-full rounded-md border border-line bg-white px-2 text-xs"
+            className="mt-2.5 h-8 w-full rounded-md border border-line bg-panel px-2 text-xs"
             aria-label="Color blindness simulation"
           >
             <option value="none">Off</option>
@@ -272,7 +272,7 @@ export function ContrastPanel({ onGetCode }: { onGetCode: () => void }) {
             <option value="tritanopia">Tritanopia</option>
           </select>
         </div>
-        <div className="rounded-card border border-line bg-white p-4 shadow-panel">
+        <div className="rounded-card border border-line bg-panel p-4 shadow-panel">
           <p className="text-[13px] font-semibold text-ink">Auto-Fixer</p>
           <p className="mt-1 text-[12px] leading-relaxed text-muted">
             Adjust your current foreground to the nearest AA-passing shade.
@@ -339,7 +339,7 @@ function MatrixCell({ fg, bg }: { fg: string; bg: string }) {
       <span className="inline-flex items-center gap-1.5">
         <span
           className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-            r.grade === "Fail" ? "bg-red-50 text-fail" : "bg-green-50 text-pass"
+            r.grade === "Fail" ? "bg-fail-50 text-fail" : "bg-pass-50 text-pass"
           }`}
         >
           {r.grade === "Fail" ? "FAIL" : r.grade}
@@ -360,7 +360,7 @@ function Badge({ ok, label }: { ok: boolean; label: string; pass?: boolean }) {
 
 function FeatureCard({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-card border border-line bg-white p-4 shadow-panel">
+    <div className="rounded-card border border-line bg-panel p-4 shadow-panel">
       <p className="text-[13px] font-semibold text-ink">{title}</p>
       <p className="mt-1 text-[12px] leading-relaxed text-muted">{body}</p>
     </div>

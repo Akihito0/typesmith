@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ThemeToggle } from "@/frontend/system/ThemeToggle";
 
 // Prefixed with "/" so the same nav works from the doc pages (/privacy, …):
 // on the landing page these resolve to same-document hash scrolls (animated by
@@ -43,6 +44,7 @@ export function Nav({ onLogin }: { onLogin: () => void }) {
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
+          <ThemeToggle className="grid h-8 w-8 place-items-center rounded-sm text-gray-400 transition-colors hover:text-white" />
           <button
             onClick={onLogin}
             className="font-mono text-[11px] uppercase tracking-[0.15em] text-gray-400 transition-colors hover:text-white"

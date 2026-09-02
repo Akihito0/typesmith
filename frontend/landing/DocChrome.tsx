@@ -14,7 +14,7 @@ import { SmoothScroll } from "./SmoothScroll";
 export function DocChrome({ children }: { children: ReactNode }) {
   const [authOpen, setAuthOpen] = useState(false);
   return (
-    <main className="min-h-screen bg-canvas text-white">
+    <main className="ts-light min-h-screen bg-canvas text-white">
       <SmoothScroll />
       <Nav onLogin={() => setAuthOpen(true)} />
       {children}

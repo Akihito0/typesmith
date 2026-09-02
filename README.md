@@ -100,6 +100,12 @@ Everything hangs off one shared state object:
 - `frontend/app/` is routes only; the page bodies live in `frontend/docs/`,
   `frontend/landing/`, `frontend/system/` and `frontend/editor/`.
 
+Light and dark themes ship across the editor, docs, and landing: chrome
+colours are CSS variables, so one attribute on `<html>` repaints the app. The
+toggle cycles Light → Dark → System and is applied before first paint. The
+user's own project colours never invert — see `.ts-light` in
+`frontend/styles/globals.css`.
+
 No server, no database, no env vars, no accounts — by design. "backend" is the
 logic layer, not a separate process.
 

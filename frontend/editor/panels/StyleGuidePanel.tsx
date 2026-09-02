@@ -37,7 +37,7 @@ export function StyleGuidePanel() {
     // a height this panel just gets clipped instead of scrolling.
     <div className="mx-auto h-full max-w-3xl space-y-4 overflow-y-auto pb-2 ts-scroll print:h-auto print:overflow-visible">
       {/* header */}
-      <section className="rounded-card border border-line bg-white p-6 shadow-panel">
+      <section className="ts-light rounded-card border border-line bg-white p-6 shadow-panel">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
@@ -70,7 +70,7 @@ export function StyleGuidePanel() {
       </section>
 
       {/* typography */}
-      <section className="rounded-card border border-line bg-white p-6 shadow-panel">
+      <section className="ts-light rounded-card border border-line bg-white p-6 shadow-panel">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Typography</p>
         <div className="mt-3 grid grid-cols-2 gap-4">
           <div className="rounded-md border border-line p-4">
@@ -117,7 +117,7 @@ export function StyleGuidePanel() {
       </section>
 
       {/* color */}
-      <section className="rounded-card border border-line bg-white p-6 shadow-panel">
+      <section className="ts-light rounded-card border border-line bg-white p-6 shadow-panel">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Color</p>
         <div className="mt-3 grid grid-cols-3 gap-4">
           {(

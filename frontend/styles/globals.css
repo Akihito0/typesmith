@@ -2,15 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   Theme tokens. Chrome colours live here as RGB channels so tailwind.config.ts
+   can wrap them in rgb(... / <alpha-value>) and opacity modifiers keep working.
+   Flipping [data-app-theme] on <html> repaints the whole app; nothing needs a
+   `dark:` variant.
+
+   Deliberately NOT themed: the user's own project colours (type previews,
+   mockups, style guide, playground frames and text). Those are the artwork
+   being designed — they must look identical whatever theme the app wears.
+   ========================================================================== */
 :root {
   --brand: #2563eb;
   --brand-700: #1d4ed8;
+
+  --c-panel: 255 255 255; /* cards, popovers, inputs */
+  --c-surface: 248 249 251; /* page behind the panels */
+  --c-sidebar: 251 251 253;
+  --c-line: 230 232 236;
+  --c-ink: 17 24 39; /* primary text */
+  --c-muted: 107 114 128; /* secondary text */
+  --c-accent: 29 78 216; /* brand as text on chrome */
+  --c-brand-50: 239 244 255; /* brand tint fills */
+  --c-brand-100: 219 230 255;
+  --c-pass: 22 163 74;
+  --c-pass-50: 240 253 244;
+  --c-fail: 220 38 38;
+  --c-fail-50: 254 242 242;
+
+  /* Playground canvas: chrome, not artwork — the backdrop the frames sit on. */
+  --c-plane: 236 238 241;
+  --c-plane-dot: 17 24 39;
+  --c-plane-dot-alpha: 0.16;
+  --c-plane-shadow: 17 24 39;
+  --c-plane-shadow-alpha: 0.16;
+
+  color-scheme: light;
+}
+
+html[data-app-theme="dark"] {
+  --c-panel: 28 28 32;
+  --c-surface: 19 19 22;
+  --c-sidebar: 22 22 26;
+  --c-line: 44 44 50;
+  --c-ink: 243 244 246;
+  --c-muted: 156 163 175;
+  --c-accent: 147 183 255;
+  --c-brand-50: 25 38 68;
+  --c-brand-100: 32 51 92;
+  --c-pass: 52 199 108;
+  --c-pass-50: 18 43 29;
+  --c-fail: 248 113 113;
+  --c-fail-50: 56 26 26;
+
+  --c-plane: 15 15 17;
+  --c-plane-dot: 226 232 240;
+  --c-plane-dot-alpha: 0.14;
+  --c-plane-shadow: 0 0 0;
+  --c-plane-shadow-alpha: 0.55;
+
+  color-scheme: dark;
+}
+
+/* Pins the light palette on a subtree, whatever the app theme is. Used by the
+   surfaces that ARE the artwork rather than chrome — the style guide sheet,
+   the device mockups, the Pro layouts, and the landing page's light section.
+   Those show the user's own colours, which are chosen against a light ground;
+   letting them invert would make the work unreadable and, worse, misrepresent
+   what the user is designing — and by the landing page and docs, which are a
+   fixed dark editorial design that never followed the app theme. (Their white
+   CTA needs a dark `ink`, and their link text needs the light `brand-100`;
+   both are the light theme's values.) */
+.ts-light {
+  --c-panel: 255 255 255;
+  --c-surface: 248 249 251;
+  --c-sidebar: 251 251 253;
+  --c-line: 230 232 236;
+  --c-ink: 17 24 39;
+  --c-muted: 107 114 128;
+  --c-accent: 29 78 216;
+  --c-brand-50: 239 244 255;
+  --c-brand-100: 219 230 255;
+  --c-pass: 22 163 74;
+  --c-pass-50: 240 253 244;
+  --c-fail: 220 38 38;
+  --c-fail-50: 254 242 242;
 }
 
 html,
 body {
   height: 100%;
-  background-color: #171717;
+  background-color: rgb(var(--c-surface));
+}
+
+/* The theme swap should feel like one repaint, not a dozen racing ones. */
+html[data-app-theme] body,
+html[data-app-theme] body * {
+  transition-property: background-color, border-color;
+  transition-duration: 180ms;
+  transition-timing-function: ease;
+}
+/* ...but never fight an in-progress drag on the canvas. */
+.ts-no-theme-transition,
+.ts-no-theme-transition * {
+  transition-property: none !important;
 }
 
 body {

@@ -1,6 +1,13 @@
 import path from "node:path";
 import type { Config } from "tailwindcss";
 
+/** Chrome colours come from CSS variables so one attribute on <html> repaints
+ * the app. Channels are stored space-separated ("17 24 39") so Tailwind's
+ * opacity modifiers — bg-ink/40, bg-brand-600/10 — keep working. */
+function token(name: string) {
+  return `rgb(var(--c-${name}) / <alpha-value>)`;
+}
+
 // Tailwind resolves relative content globs from the working directory, which
 // is the repo root (npm scripts run `next build frontend`) — not from this
 // file. Absolute paths keep them correct whatever the cwd. backend/ is scanned
@@ -21,30 +28,41 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Brand accent — pulled from the Color Contrast screen ("Primary Blue #2563eb")
+        // Brand accent — pulled from the Color Contrast screen
+        // ("Primary Blue #2563eb"). The numeric scale is fixed in both themes:
+        // these are fills that carry white text, so lightening them in dark
+        // mode would break the contrast they exist to provide.
         brand: {
-          50: "#eff4ff",
-          100: "#dbe6ff",
+          50: token("brand-50"),
+          100: token("brand-100"),
           500: "#2563eb",
           600: "#2563eb",
           700: "#1d4ed8",
           800: "#1e40af",
         },
-        // App chrome (light)
-        surface: "#f8f9fb",
-        sidebar: "#fbfbfd",
-        line: "#e6e8ec",
-        ink: "#111827",
-        muted: "#6b7280",
-        // Editor canvas (dark)
+        // Brand as *text* on chrome. Separate from the scale above because it
+        // has to lighten in dark mode while the fills stay saturated.
+        accent: token("accent"),
+        // App chrome. Every one of these flips with the theme — see the
+        // :root / [data-app-theme="dark"] blocks in styles/globals.css.
+        panel: token("panel"),
+        surface: token("surface"),
+        sidebar: token("sidebar"),
+        line: token("line"),
+        ink: token("ink"),
+        // The playground backdrop the frames sit on — chrome, not artwork.
+        plane: token("plane"),
+        muted: token("muted"),
+        // Editor canvas (deliberately dark in both themes — the landing page
+        // and the playground tool dock are built on it).
         canvas: {
           DEFAULT: "#171717",
           panel: "#1f1f1f",
           line: "#2b2b2b",
           code: "#0e0f13",
         },
-        pass: "#16a34a",
-        fail: "#dc2626",
+        pass: { DEFAULT: token("pass"), 50: token("pass-50") },
+        fail: { DEFAULT: token("fail"), 50: token("fail-50") },
       },
       fontFamily: {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],

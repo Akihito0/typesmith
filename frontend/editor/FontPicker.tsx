@@ -73,14 +73,14 @@ export function FontPicker({
         onClick={() => setOpen((o) => !o)}
         aria-label={label}
         aria-expanded={open}
-        className="flex h-8 w-full items-center justify-between gap-1 rounded-md border border-line bg-white px-3 text-sm text-ink hover:bg-surface"
+        className="flex h-8 w-full items-center justify-between gap-1 rounded-md border border-line bg-panel px-3 text-sm text-ink hover:bg-surface"
       >
         <span className="truncate">{current.name}</span>
         <Chevron className="shrink-0 text-muted" />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-9 z-40 w-64 rounded-lg border border-line bg-white shadow-modal">
+        <div className="absolute left-0 top-9 z-40 w-64 rounded-lg border border-line bg-panel shadow-modal">
           <div className="border-b border-line p-2">
             <input
               autoFocus
@@ -141,7 +141,7 @@ export function FontPicker({
           <div className="border-t border-line p-1.5">
             <button
               onClick={() => fileRef.current?.click()}
-              className="w-full rounded-md px-2.5 py-1.5 text-left text-[13px] font-medium text-brand-600 hover:bg-surface"
+              className="w-full rounded-md px-2.5 py-1.5 text-left text-[13px] font-medium text-accent hover:bg-surface"
             >
               + Upload font…
             </button>
@@ -184,7 +184,7 @@ const Option = forwardRef<
       ref={ref}
       onClick={onClick}
       className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-[14px] ${
-        active ? "bg-brand-50 font-medium text-brand-700" : "text-ink hover:bg-surface"
+        active ? "bg-brand-50 font-medium text-accent" : "text-ink hover:bg-surface"
       }`}
     >
       <span className="truncate" style={stack ? { fontFamily: stack } : undefined}>

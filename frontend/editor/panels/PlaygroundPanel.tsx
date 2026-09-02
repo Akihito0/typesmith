@@ -246,7 +246,7 @@ function IconButton({
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className="grid h-8 min-w-8 place-items-center rounded-md border border-line bg-white px-2 text-xs font-medium text-muted hover:bg-surface hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+      className="grid h-8 min-w-8 place-items-center rounded-md border border-line bg-panel px-2 text-xs font-medium text-muted hover:bg-surface hover:text-ink disabled:pointer-events-none disabled:opacity-40"
     >
       {children}
     </button>
@@ -1131,10 +1131,10 @@ export function PlaygroundPanel() {
       : "crosshair";
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-line bg-white shadow-panel">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-card border border-line bg-panel shadow-panel">
       <header className="flex min-h-12 flex-wrap items-center gap-2 border-b border-line px-3 py-2">
         <div className="mr-1 hidden lg:block">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-accent">
             Playground
           </p>
           <p className="text-xs text-muted">Infinite canvas</p>
@@ -1192,10 +1192,11 @@ export function PlaygroundPanel() {
         <div
           ref={viewportRef}
           data-testid="playground-canvas"
-          className="relative min-w-0 flex-1 touch-none overflow-hidden bg-[#eceef1]"
+          className="relative min-w-0 flex-1 touch-none overflow-hidden bg-plane"
           style={{
             cursor,
-            backgroundImage: "radial-gradient(circle, rgba(17,24,39,0.16) 1px, transparent 1px)",
+            backgroundImage:
+              "radial-gradient(circle, rgb(var(--c-plane-dot) / var(--c-plane-dot-alpha)) 1px, transparent 1px)",
             backgroundSize: `${Math.max(8, 40 * view.zoom)}px ${Math.max(8, 40 * view.zoom)}px`,
             backgroundPosition: `${view.x}px ${view.y}px`,
           }}
@@ -1223,7 +1224,7 @@ export function PlaygroundPanel() {
                       transformOrigin: "left bottom",
                       paddingBottom: 6,
                       fontSize: 12,
-                      color: active ? "#2563eb" : "#6b7280",
+                      color: active ? "#2563eb" : "rgb(var(--c-muted))",
                     }}
                     onPointerDown={(event) => onNodePointerDown(event, frame.id)}
                   >
@@ -1249,8 +1250,8 @@ export function PlaygroundPanel() {
                           ? "50%"
                           : Math.min(frame.radius, rect.width / 2, rect.height / 2),
                       boxShadow: active
-                        ? `0 0 0 ${2 / view.zoom}px #2563eb, 0 18px 45px rgba(17,24,39,0.16)`
-                        : "0 18px 45px rgba(17,24,39,0.16)",
+                        ? `0 0 0 ${2 / view.zoom}px #2563eb, 0 18px 45px rgb(var(--c-plane-shadow) / var(--c-plane-shadow-alpha))`
+                        : "0 18px 45px rgb(var(--c-plane-shadow) / var(--c-plane-shadow-alpha))",
                     }}
                     onPointerDown={(event) => onNodePointerDown(event, frame.id)}
                     aria-label={`${frame.name} frame`}
@@ -1715,7 +1716,7 @@ function Inspector({
                     onClick={() =>
                       onPatchNodes({ rotation: (activeNode?.rotation ?? 0) + step }, false)
                     }
-                    className="h-8 rounded-md border border-line bg-white text-[10px] text-muted hover:bg-surface hover:text-ink"
+                    className="h-8 rounded-md border border-line bg-panel text-[10px] text-muted hover:bg-surface hover:text-ink"
                   >
                     {step > 0 ? `+${step}` : step}
                   </button>
@@ -1737,7 +1738,7 @@ function Inspector({
                   <button
                     key={value}
                     onClick={() => onAlign(value)}
-                    className="h-8 rounded-md border border-line bg-white px-1 text-[10px] text-muted hover:bg-surface hover:text-ink"
+                    className="h-8 rounded-md border border-line bg-panel px-1 text-[10px] text-muted hover:bg-surface hover:text-ink"
                   >
                     {label}
                   </button>
@@ -1761,7 +1762,7 @@ function Inspector({
                     key={value}
                     onClick={() => onDistribute(value)}
                     disabled={selectedNodes.length < 3}
-                    className="h-8 rounded-md border border-line bg-white text-[10px] text-muted hover:bg-surface hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+                    className="h-8 rounded-md border border-line bg-panel text-[10px] text-muted hover:bg-surface hover:text-ink disabled:pointer-events-none disabled:opacity-40"
                   >
                     {label}
                   </button>
@@ -1775,7 +1776,7 @@ function Inspector({
                     key={move}
                     onClick={() => onReorder(move)}
                     disabled={!activeNode}
-                    className="h-8 rounded-md border border-line bg-white text-[10px] capitalize text-muted hover:bg-surface hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+                    className="h-8 rounded-md border border-line bg-panel text-[10px] capitalize text-muted hover:bg-surface hover:text-ink disabled:pointer-events-none disabled:opacity-40"
                   >
                     {move}
                   </button>
@@ -1785,13 +1786,13 @@ function Inspector({
             <div className="grid grid-cols-2 gap-1">
               <button
                 onClick={() => onToggleFlag("locked")}
-                className={`h-8 rounded-md border text-[10px] ${anyLocked ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line bg-white text-muted hover:bg-surface hover:text-ink"}`}
+                className={`h-8 rounded-md border text-[10px] ${anyLocked ? "border-brand-600 bg-brand-50 text-accent" : "border-line bg-panel text-muted hover:bg-surface hover:text-ink"}`}
               >
                 {anyLocked ? "Unlock" : "Lock"}
               </button>
               <button
                 onClick={() => onToggleFlag("hidden")}
-                className={`h-8 rounded-md border text-[10px] ${anyHidden ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line bg-white text-muted hover:bg-surface hover:text-ink"}`}
+                className={`h-8 rounded-md border text-[10px] ${anyHidden ? "border-brand-600 bg-brand-50 text-accent" : "border-line bg-panel text-muted hover:bg-surface hover:text-ink"}`}
               >
                 {anyHidden ? "Show" : "Hide"}
               </button>
@@ -1807,7 +1808,7 @@ function Inspector({
               <input
                 value={activeFrame.name}
                 onChange={(event) => onPatchFrame(activeFrame.id, { name: event.target.value })}
-                className="h-8 w-full rounded-md border border-line bg-white px-2.5 text-sm text-ink"
+                className="h-8 w-full rounded-md border border-line bg-panel px-2.5 text-sm text-ink"
               />
             </Field>
             <FieldGroup label="Shape">
@@ -1885,12 +1886,12 @@ function Inspector({
             </Field>
             <button
               onClick={() => onFitFrame(activeFrame.id)}
-              className="h-8 w-full rounded-md border border-line bg-white text-xs text-muted hover:bg-surface hover:text-ink"
+              className="h-8 w-full rounded-md border border-line bg-panel text-xs text-muted hover:bg-surface hover:text-ink"
             >
               Fit frame to its text
             </button>
             <Field label="Background">
-              <div className="flex h-8 items-center gap-2 rounded-md border border-line bg-white px-2">
+              <div className="flex h-8 items-center gap-2 rounded-md border border-line bg-panel px-2">
                 <input
                   type="color"
                   value={activeFrame.background}
@@ -1918,7 +1919,7 @@ function Inspector({
             </div>
             <button
               onClick={onDelete}
-              className="h-8 w-full rounded-md border border-line bg-white text-xs text-muted hover:border-fail hover:text-fail"
+              className="h-8 w-full rounded-md border border-line bg-panel text-xs text-muted hover:border-fail hover:text-fail"
             >
               Delete frame and its text
             </button>
@@ -1941,7 +1942,7 @@ function Inspector({
                 <input
                   value={activeLayer.name}
                   onChange={(event) => onPatchLayers({ name: event.target.value })}
-                  className="h-8 w-full rounded-md border border-line bg-white px-2.5 text-sm text-ink"
+                  className="h-8 w-full rounded-md border border-line bg-panel px-2.5 text-sm text-ink"
                 />
               </Field>
             )}
@@ -1990,7 +1991,7 @@ function Inspector({
               </Field>
             </div>
             <Field label="Text color">
-              <div className="flex h-8 items-center gap-2 rounded-md border border-line bg-white px-2">
+              <div className="flex h-8 items-center gap-2 rounded-md border border-line bg-panel px-2">
                 <input
                   type="color"
                   value={primary?.color ?? "#111827"}
@@ -2009,7 +2010,7 @@ function Inspector({
                   <button
                     key={alignment}
                     onClick={() => onPatchLayers({ textAlign: alignment }, false)}
-                    className={`h-8 rounded-md border text-xs capitalize ${shares("textAlign") && primary?.textAlign === alignment ? "border-brand-600 bg-brand-50 text-brand-700" : "border-line bg-white text-muted hover:bg-surface"}`}
+                    className={`h-8 rounded-md border text-xs capitalize ${shares("textAlign") && primary?.textAlign === alignment ? "border-brand-600 bg-brand-50 text-accent" : "border-line bg-panel text-muted hover:bg-surface"}`}
                   >
                     {alignment}
                   </button>
@@ -2106,13 +2107,13 @@ function LayerRow({
 }) {
   return (
     <div
-      className={`group flex w-full items-center gap-2 rounded-md border px-2.5 py-2 text-left ${selected ? "border-brand-600 bg-brand-50" : "border-transparent hover:border-line hover:bg-white"}`}
+      className={`group flex w-full items-center gap-2 rounded-md border px-2.5 py-2 text-left ${selected ? "border-brand-600 bg-brand-50" : "border-transparent hover:border-line hover:bg-panel"}`}
     >
       <button
         onClick={(event) => onSelect(event.shiftKey)}
         className="flex min-w-0 flex-1 items-center gap-2 text-left"
       >
-        <span className="grid h-6 w-6 shrink-0 place-items-center rounded bg-white font-serif text-xs font-bold text-ink shadow-sm">
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded bg-panel font-serif text-xs font-bold text-ink shadow-sm">
           {glyph}
         </span>
         <span className={`min-w-0 flex-1 ${hidden ? "opacity-50" : ""}`}>
@@ -2192,7 +2193,7 @@ function NumberInput({
       max={max}
       step={step}
       onChange={(event) => onChange(clamp(numberValue(event.target.value, value), min, max))}
-      className="h-8 w-full rounded-md border border-line bg-white px-2.5 text-sm text-ink"
+      className="h-8 w-full rounded-md border border-line bg-panel px-2.5 text-sm text-ink"
     />
   );
 }

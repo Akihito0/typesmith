@@ -8,6 +8,7 @@ import { buildShareUrl } from "@/backend/project/share";
 import { isProUnlocked } from "@/backend/project/pro";
 import { FontPicker } from "./FontPicker";
 import { ShareModal } from "./ShareModal";
+import { ThemeToggle } from "@/frontend/system/ThemeToggle";
 import { Button, Check, Chevron, Logo, Redo, Select, Shuffle, Undo } from "@/frontend/ui";
 import type { ToolId } from "./types";
 import { LAYOUTS } from "./Sidebar";
@@ -82,7 +83,7 @@ export function Toolbar({
     // ~1044px wide, pushing Share / Export / Upgrade off-screen and scrolling
     // the whole page sideways — which mattered more once the QR flow started
     // sending people here from their phones.
-    <div className="flex min-h-14 flex-wrap items-center gap-x-2 gap-y-2 border-b border-line bg-white px-3 py-2 print:hidden md:h-14 md:flex-nowrap md:gap-x-3 md:px-4 md:py-0">
+    <div className="flex min-h-14 flex-wrap items-center gap-x-2 gap-y-2 border-b border-line bg-panel px-3 py-2 print:hidden md:h-14 md:flex-nowrap md:gap-x-3 md:px-4 md:py-0">
       {onMenu && (
         <button
           onClick={onMenu}
@@ -208,6 +209,7 @@ export function Toolbar({
         <span className="hidden sm:inline-flex">
           <SaveIndicator />
         </span>
+        <ThemeToggle className="grid h-8 w-8 place-items-center rounded-md border border-line text-muted hover:bg-surface hover:text-ink" />
         <Button variant="outline" className="h-8 px-3 text-xs" onClick={share}>
           {copied ? "Link copied" : "Share"}
         </Button>
@@ -321,7 +323,7 @@ function TypeMenu() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-10 z-40 w-72 space-y-3 rounded-lg border border-line bg-white p-3 shadow-modal">
+        <div className="absolute left-0 top-10 z-40 w-72 space-y-3 rounded-lg border border-line bg-panel p-3 shadow-modal">
           {/* Presets are only in the toolbar proper from lg up, so they need a
               home here or they're unreachable on a narrow screen. */}
           <div className="flex items-end gap-2 lg:hidden">
@@ -477,7 +479,7 @@ function EditViewControl({
           setViewOpen(false);
         }}
         className={`rounded px-2.5 h-6 text-xs font-medium transition-colors ${
-          mode === "edit" ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink"
+          mode === "edit" ? "bg-panel text-ink shadow-sm" : "text-muted hover:text-ink"
         }`}
       >
         Edit
@@ -499,7 +501,7 @@ function EditViewControl({
           aria-expanded={viewOpen}
           aria-haspopup="true"
           className={`inline-flex items-center gap-0.5 rounded px-2.5 h-6 text-xs font-medium transition-colors ${
-            mode === "view" ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink"
+            mode === "view" ? "bg-panel text-ink shadow-sm" : "text-muted hover:text-ink"
           }`}
         >
           View
@@ -509,7 +511,7 @@ function EditViewControl({
         </button>
 
         {viewOpen && (
-          <div className="absolute left-0 top-8 z-40 w-44 rounded-lg border border-line bg-white p-1 shadow-modal">
+          <div className="absolute left-0 top-8 z-40 w-44 rounded-lg border border-line bg-panel p-1 shadow-modal">
             <p className="mb-1 px-2 pt-1 text-[9px] font-semibold uppercase tracking-wider text-muted">
               Layouts
             </p>
@@ -530,13 +532,13 @@ function EditViewControl({
                 }}
                 className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[13px] transition-colors ${
                   activeTool === item.id && mode === "view"
-                    ? "bg-brand-50 font-medium text-brand-700"
+                    ? "bg-brand-50 font-medium text-accent"
                     : "text-ink hover:bg-surface"
                 }`}
               >
                 <span>{item.label}</span>
                 {item.pro && (
-                  <span className="rounded border border-line bg-white px-1.5 py-px text-[9px] font-semibold uppercase text-muted">
+                  <span className="rounded border border-line bg-panel px-1.5 py-px text-[9px] font-semibold uppercase text-muted">
                     Pro
                   </span>
                 )}

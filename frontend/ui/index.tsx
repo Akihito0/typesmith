@@ -13,7 +13,7 @@ export function Button({
     "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none px-4 h-9";
   const variants: Record<ButtonVariant, string> = {
     primary: "bg-brand-600 text-white hover:bg-brand-700",
-    outline: "border border-line bg-white text-ink hover:bg-surface",
+    outline: "border border-line bg-panel text-ink hover:bg-surface",
     ghost: "text-ink hover:bg-surface",
     dark: "bg-[#111827] text-white hover:bg-black",
   };
@@ -29,7 +29,7 @@ export function Select({
   return (
     <div className={`relative ${className}`}>
       <select
-        className="w-full appearance-none rounded-md border border-line bg-white px-3 pr-8 h-8 text-sm text-ink focus:border-brand-600"
+        className="w-full appearance-none rounded-md border border-line bg-panel px-3 pr-8 h-8 text-sm text-ink focus:border-brand-600"
         {...props}
       >
         {children}
@@ -89,7 +89,7 @@ export function Segmented<T extends string>({
           key={o.value}
           onClick={() => onChange(o.value)}
           className={`${pad} rounded font-medium transition-colors ${
-            value === o.value ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink"
+            value === o.value ? "bg-panel text-ink shadow-sm" : "text-muted hover:text-ink"
           }`}
         >
           {o.label}

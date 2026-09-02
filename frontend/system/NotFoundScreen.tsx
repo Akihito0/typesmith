@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function NotFoundScreen() {
   return (
-    <main className="grid min-h-screen place-items-center bg-canvas px-6 text-white">
+    <main className="ts-light grid min-h-screen place-items-center bg-canvas px-6 text-white">
       <div className="max-w-md text-center">
         <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-brand-500">
           404 &mdash; Missing glyph

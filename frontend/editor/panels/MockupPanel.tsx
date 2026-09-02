@@ -50,7 +50,7 @@ export function WebsiteMockup() {
   return (
     <div className="flex h-full flex-col">
       {/* responsive width toggle */}
-      <div className="mb-3 flex items-center gap-1 self-center rounded-md border border-line bg-white p-0.5 text-xs">
+      <div className="mb-3 flex items-center gap-1 self-center rounded-md border border-line bg-panel p-0.5 text-xs">
         {(["desktop", "tablet", "mobile"] as const).map((w) => (
           <button
             key={w}
@@ -70,7 +70,7 @@ export function WebsiteMockup() {
             tall frame with a dead band below. Degrades to top-aligned scroll
             when the content is taller than the canvas. */}
         <div
-          className="m-auto flex h-fit flex-col overflow-hidden rounded-lg border border-line bg-white shadow-panel transition-all"
+          className="ts-light m-auto flex h-fit flex-col overflow-hidden rounded-lg border border-line bg-white shadow-panel transition-all"
           style={{ width: frameWidth, maxWidth: "100%" }}
         >
           {/* browser chrome */}
@@ -248,7 +248,7 @@ export function MobileMockup() {
 
         {/* Phone shell — 330×715 ≈ the iPhone 15 aspect (1:2.17) */}
         <div
-          className="relative w-[330px] overflow-hidden rounded-[48px] border-[9px] border-ink bg-ink shadow-panel"
+          className="ts-light relative w-[330px] overflow-hidden rounded-[48px] border-[9px] border-ink bg-ink shadow-panel"
           style={{ height: 715 }}
         >
           {/* Dynamic island */}
@@ -403,7 +403,7 @@ export function MockupControls() {
   );
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col gap-4 overflow-y-auto border-l border-line bg-white p-4 ts-scroll">
+    <aside className="flex w-64 shrink-0 flex-col gap-4 overflow-y-auto border-l border-line bg-panel p-4 ts-scroll">
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
         Technical Controls
       </p>
@@ -420,7 +420,7 @@ export function MockupControls() {
         <select
           value={format}
           onChange={(e) => setFormat(e.target.value as ExportFormat)}
-          className="mt-1 h-8 w-full rounded-md border border-line bg-white px-2 text-sm"
+          className="mt-1 h-8 w-full rounded-md border border-line bg-panel px-2 text-sm"
           aria-label="Output format"
         >
           {(Object.keys(FORMAT_LABELS) as ExportFormat[]).map((f) => (

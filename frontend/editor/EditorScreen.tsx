@@ -188,7 +188,7 @@ function EditorInner() {
 function ProLocked({ onUpgrade }: { onUpgrade: () => void }) {
   return (
     <div className="grid h-full place-items-center p-6">
-      <div className="max-w-sm rounded-card border border-line bg-white p-6 text-center shadow-panel">
+      <div className="max-w-sm rounded-card border border-line bg-panel p-6 text-center shadow-panel">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
           TypeSmith Pro
         </p>

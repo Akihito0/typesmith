@@ -83,7 +83,7 @@ export function ShareModal({
     >
       <div
         ref={dialogRef}
-        className="w-full max-w-sm rounded-xl bg-white p-6 shadow-modal"
+        className="w-full max-w-sm rounded-xl bg-panel p-6 shadow-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -133,7 +133,7 @@ export function ShareModal({
           value={url}
           aria-label="Share link"
           onFocus={(e) => e.currentTarget.select()}
-          className="mt-1 w-full rounded-md border border-line bg-white px-2.5 py-2 font-mono text-[11px] text-ink"
+          className="mt-1 w-full rounded-md border border-line bg-panel px-2.5 py-2 font-mono text-[11px] text-ink"
         />
 
         <div className="mt-4 flex gap-2">

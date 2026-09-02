@@ -86,7 +86,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
     >
       <div
         ref={dialogRef}
-        className="w-full max-w-lg rounded-xl bg-white p-5 shadow-modal"
+        className="w-full max-w-lg rounded-xl bg-panel p-5 shadow-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -109,7 +109,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
               key={f}
               onClick={() => setFormat(f)}
               className={`flex-1 rounded px-2 py-1.5 text-xs font-medium ${
-                format === f ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink"
+                format === f ? "bg-panel text-ink shadow-sm" : "text-muted hover:text-ink"
               }`}
             >
               {FORMAT_LABELS[f]}

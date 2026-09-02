@@ -3,10 +3,16 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { GOOGLE_FONTS_HREF } from "@/backend/fonts/catalog";
 import { absoluteUrl, SITE_ORIGIN } from "@/backend/site";
+import { THEME_BOOT_SCRIPT } from "@/backend/project/theme";
 import "@/frontend/styles/globals.css";
 
 export const viewport: Viewport = {
-  themeColor: "#171717",
+  // Matches the surface token in each theme, so the browser chrome on mobile
+  // agrees with the page instead of framing it in the wrong colour.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8f9fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#131316" },
+  ],
 };
 
 export const metadata: Metadata = {
@@ -34,14 +40,24 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} bg-canvas`}>
+    <html
+      lang="en"
+      // The boot script overwrites this before paint; "light" is only what a
+      // no-JS visitor gets.
+      data-app-theme="light"
+      className={`${GeistSans.variable} ${GeistMono.variable} bg-surface`}
+      suppressHydrationWarning
+    >
       <head>
+        {/* Sets the theme before first paint so a dark-mode visitor never sees
+            a white flash. Must stay ahead of the stylesheet. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         {/* Preload connection + the curated preview faces */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="stylesheet" href={GOOGLE_FONTS_HREF} />
       </head>
-      <body className="bg-canvas text-ink antialiased">{children}</body>
+      <body className="bg-surface text-ink antialiased">{children}</body>
     </html>
   );
 }

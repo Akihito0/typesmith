@@ -38,7 +38,7 @@ export function ProModal({ open, onClose }: { open: boolean; onClose: () => void
     >
       <div
         ref={dialogRef}
-        className="w-full max-w-sm rounded-xl bg-white p-6 shadow-modal"
+        className="w-full max-w-sm rounded-xl bg-panel p-6 shadow-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -63,7 +63,7 @@ export function ProModal({ open, onClose }: { open: boolean; onClose: () => void
         <ul className="mt-4 space-y-2.5">
           {PRO_FEATURES.map((f) => (
             <li key={f} className="flex items-start gap-2 text-[13px] text-ink">
-              <Check className="mt-0.5 shrink-0 text-brand-600" />
+              <Check className="mt-0.5 shrink-0 text-accent" />
               {f}
             </li>
           ))}

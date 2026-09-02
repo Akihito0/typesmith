@@ -208,7 +208,7 @@ export function Sidebar({
         </button>
 
         {wsOpen && (
-          <div className="absolute left-2 right-2 top-full z-40 mt-1 rounded-lg border border-line bg-white p-1.5 shadow-modal">
+          <div className="absolute left-2 right-2 top-full z-40 mt-1 rounded-lg border border-line bg-panel p-1.5 shadow-modal">
             {[...projects]
               .sort((a, b) => b.updatedAt - a.updatedAt)
               .map((entry) => (
@@ -224,7 +224,7 @@ export function Sidebar({
                   >
                     <span
                       className={`block truncate text-[13px] ${
-                        entry.id === activeId ? "font-medium text-brand-700" : "text-ink"
+                        entry.id === activeId ? "font-medium text-accent" : "text-ink"
                       }`}
                     >
                       {entry.id === activeId ? projectName : entry.state.projectName}
@@ -243,7 +243,7 @@ export function Sidebar({
                       onClick={() => renameProject(entry.id)}
                       aria-label={`Rename ${entry.state.projectName}`}
                       title="Rename"
-                      className="rounded px-1 py-0.5 text-[11px] text-muted hover:bg-white hover:text-ink"
+                      className="rounded px-1 py-0.5 text-[11px] text-muted hover:bg-panel hover:text-ink"
                     >
                       Aa
                     </button>
@@ -251,7 +251,7 @@ export function Sidebar({
                       onClick={() => duplicateProject(entry.id)}
                       aria-label={`Duplicate ${entry.state.projectName}`}
                       title="Duplicate"
-                      className="rounded px-1 py-0.5 text-[11px] text-muted hover:bg-white hover:text-ink"
+                      className="rounded px-1 py-0.5 text-[11px] text-muted hover:bg-panel hover:text-ink"
                     >
                       ++
                     </button>
@@ -259,7 +259,7 @@ export function Sidebar({
                       onClick={() => deleteProject(entry.id)}
                       aria-label={`Delete ${entry.state.projectName}`}
                       title="Delete"
-                      className="rounded px-1 py-0.5 text-[11px] text-muted hover:bg-white hover:text-fail"
+                      className="rounded px-1 py-0.5 text-[11px] text-muted hover:bg-panel hover:text-fail"
                     >
                       ×
                     </button>
@@ -378,7 +378,7 @@ function Item({
       title={pro ? PRO_STATUS_LABEL : undefined}
       className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[13px] transition-colors ${
         active
-          ? "bg-brand-50 font-medium text-brand-700"
+          ? "bg-brand-50 font-medium text-accent"
           : locked
             ? "text-muted hover:bg-surface hover:text-ink"
             : "text-ink hover:bg-surface"
@@ -386,7 +386,7 @@ function Item({
     >
       <span>{label}</span>
       {pro && (
-        <span className="rounded border border-line bg-white px-1.5 py-px text-[9px] font-semibold uppercase text-muted">
+        <span className="rounded border border-line bg-panel px-1.5 py-px text-[9px] font-semibold uppercase text-muted">
           Pro
         </span>
       )}

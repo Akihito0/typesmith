@@ -55,7 +55,7 @@ function ArtboardDownloads({ boards }: { boards: Artboard[] }) {
           key={board}
           onClick={() => download(board)}
           disabled={busy !== null}
-          className="rounded-md border border-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink hover:bg-surface disabled:opacity-50"
+          className="rounded-md border border-line bg-panel px-2.5 py-1 text-[11px] font-medium text-ink hover:bg-surface disabled:opacity-50"
         >
           {busy === board ? "Rendering…" : ARTBOARDS[board].label}
           <span className="ml-1.5 text-muted">
@@ -188,7 +188,7 @@ export function SlidesPanel() {
           used to freeze the type tiny on the blown-up stage). */}
       <div ref={stageRef} className="slides-stage flex w-full max-w-3xl flex-1 items-center">
         <div
-          className="slides-frame aspect-video w-full overflow-hidden rounded-lg border border-line shadow-panel [container-type:inline-size]"
+          className="ts-light slides-frame aspect-video w-full overflow-hidden rounded-lg border border-line shadow-panel [container-type:inline-size]"
           style={{ background: p.background, color: ink }}
         >
           <div className="h-full w-full" style={{ fontSize: "clamp(11px, 3cqw, 40px)" }}>
@@ -202,7 +202,7 @@ export function SlidesPanel() {
         <button
           onClick={() => setSlide((s) => Math.max(0, s - 1))}
           disabled={slide === 0}
-          className="rounded-md border border-line bg-white px-2.5 py-1 text-xs text-ink hover:bg-surface disabled:opacity-40"
+          className="rounded-md border border-line bg-panel px-2.5 py-1 text-xs text-ink hover:bg-surface disabled:opacity-40"
         >
           ← Prev
         </button>
@@ -221,7 +221,7 @@ export function SlidesPanel() {
         <button
           onClick={() => setSlide((s) => Math.min(slides.length - 1, s + 1))}
           disabled={slide === slides.length - 1}
-          className="rounded-md border border-line bg-white px-2.5 py-1 text-xs text-ink hover:bg-surface disabled:opacity-40"
+          className="rounded-md border border-line bg-panel px-2.5 py-1 text-xs text-ink hover:bg-surface disabled:opacity-40"
         >
           Next →
         </button>
@@ -253,7 +253,7 @@ export function SocialPanel() {
       <ArtboardDownloads boards={["post", "card", "story"]} />
       <div className="m-auto flex flex-wrap items-center justify-center gap-6 px-6">
         {/* square post */}
-        <div className="w-[340px] overflow-hidden rounded-xl border border-line bg-white shadow-panel">
+        <div className="ts-light w-[340px] overflow-hidden rounded-xl border border-line bg-white shadow-panel">
           <div className="flex items-center gap-2.5 px-3.5 py-2.5">
             <span
               className="grid h-8 w-8 place-items-center rounded-full text-[11px] font-bold"
@@ -294,7 +294,7 @@ export function SocialPanel() {
         </div>
 
         {/* post card (X/LinkedIn-style) */}
-        <div className="w-[400px] rounded-xl border border-line bg-white p-4 shadow-panel">
+        <div className="ts-light w-[400px] rounded-xl border border-line bg-white p-4 shadow-panel">
           <div className="flex items-center gap-2.5">
             <span
               className="grid h-9 w-9 place-items-center rounded-full text-[12px] font-bold"
@@ -426,13 +426,13 @@ export function NewsletterPanel() {
       <div className="flex shrink-0 justify-end px-2 pb-3">
         <button
           onClick={downloadHtml}
-          className="rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface"
+          className="rounded-md border border-line bg-panel px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface"
         >
           Download email HTML
         </button>
       </div>
       <div className="flex flex-1 overflow-auto ts-scroll">
-        <div className="m-auto h-fit w-full max-w-xl overflow-hidden rounded-lg border border-line bg-white shadow-panel">
+        <div className="ts-light m-auto h-fit w-full max-w-xl overflow-hidden rounded-lg border border-line bg-white shadow-panel">
           {/* email client chrome */}
           <div className="border-b border-line bg-surface px-5 py-3">
             <p className="text-[14px] font-semibold text-ink">{p.headline}</p>

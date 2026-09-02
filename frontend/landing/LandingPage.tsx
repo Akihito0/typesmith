@@ -15,7 +15,7 @@ export function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
 
   return (
-    <main className="min-h-screen bg-canvas">
+    <main className="ts-light min-h-screen bg-canvas">
       {/* First screen: nav + hero + marquee fill exactly one viewport — the
           marquee rides the bottom edge and the light sections only appear on
           scroll. */}
@@ -25,7 +25,7 @@ export function LandingPage() {
         <Hero />
         <Marquee />
       </div>
-      <div className="bg-white text-ink pb-12 md:pb-16">
+      <div className="ts-light bg-white text-ink pb-12 md:pb-16">
         <Features />
         <Doctrine />
         <Editions onStart={() => setAuthOpen(true)} />
