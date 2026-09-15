@@ -119,33 +119,52 @@ test("the theme follows the OS, then the explicit choice, and it persists", asyn
   const page = await ctx.newPage();
   await page.goto("/editor");
 
-  // No stored choice yet, so the OS wins.
+  // Nobody has chosen yet, so the OS wins — without a third button for it.
   const html = page.locator("html");
   await expect(html).toHaveAttribute("data-app-theme", "dark");
 
-  // Light -> Dark -> System, starting from System.
-  const toggle = page.getByRole("button", { name: /^Theme:/ });
-  await expect(toggle).toHaveAttribute("data-theme-choice", "system");
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("data-theme-choice", "light");
+  // The button offers the other theme, and says which.
+  const toSwitchToLight = page.getByRole("button", { name: "Switch to light theme" });
+  await expect(toSwitchToLight).toBeVisible();
+  await toSwitchToLight.click();
   await expect(html).toHaveAttribute("data-app-theme", "light");
+  await expect(page.getByRole("button", { name: "Switch to dark theme" })).toBeVisible();
 
   // The choice outlives a reload, and is applied before paint rather than
   // flashing the OS theme first.
   await page.reload();
   await expect(html).toHaveAttribute("data-app-theme", "light");
-  await expect(page.getByRole("button", { name: /^Theme:/ })).toHaveAttribute(
-    "data-theme-choice",
-    "light"
-  );
 
-  // Back to following the OS.
-  await page.getByRole("button", { name: /^Theme:/ }).click();
-  await expect(page.getByRole("button", { name: /^Theme:/ })).toHaveAttribute(
-    "data-theme-choice",
-    "dark"
-  );
-  await page.getByRole("button", { name: /^Theme:/ }).click();
+  // And it flips straight back — two states, no cycle to walk around.
+  await page.getByRole("button", { name: "Switch to dark theme" }).click();
   await expect(html).toHaveAttribute("data-app-theme", "dark");
+  await page.getByRole("button", { name: "Switch to light theme" }).click();
+  await expect(html).toHaveAttribute("data-app-theme", "light");
+  await ctx.close();
+});
+
+test("the public pages carry no theme toggle", async ({ page }) => {
+  // The landing and doc pages are a fixed dark editorial design that doesn't
+  // follow the app theme, so a toggle there would do nothing visible.
+  for (const route of ["/", "/privacy"]) {
+    await page.goto(route);
+    await expect(page.getByRole("button", { name: /^Switch to (light|dark) theme$/ })).toHaveCount(
+      0
+    );
+  }
+});
+
+test("a stored theme from the retired three-way control still loads", async ({ browser }) => {
+  const ctx = await browser.newContext({ colorScheme: "dark" });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => {
+    window.localStorage.setItem("typesmith-theme", "system");
+  });
+  await page.goto("/editor");
+
+  // "system" is no longer a choice, so it reads as no preference and the OS
+  // decides — rather than pinning anyone to a value they can't express.
+  await expect(page.locator("html")).toHaveAttribute("data-app-theme", "dark");
+  await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
   await ctx.close();
 });

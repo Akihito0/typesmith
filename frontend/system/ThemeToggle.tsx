@@ -3,29 +3,28 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   applyTheme,
-  nextTheme,
   readStoredTheme,
   resolveTheme,
   storeTheme,
   systemTheme,
-  type ResolvedTheme,
-  type ThemeChoice,
+  toggleTheme,
+  type Theme,
 } from "@/backend/project/theme";
 
-/** Reads the stored choice on mount and keeps <html> in sync. The boot script
- * in app/layout.tsx has already painted the right theme by the time this runs;
- * this hook only takes over from there. */
+/** Reads the stored preference on mount and keeps <html> in sync. The boot
+ * script in app/layout.tsx has already painted the right theme by the time
+ * this runs; this hook only takes over from there. */
 export function useTheme() {
-  const [choice, setChoice] = useState<ThemeChoice>("system");
-  const [system, setSystem] = useState<ResolvedTheme>("light");
+  const [stored, setStored] = useState<Theme | null>(null);
+  const [system, setSystem] = useState<Theme>("light");
 
   useEffect(() => {
-    setChoice(readStoredTheme());
+    setStored(readStoredTheme());
     setSystem(systemTheme());
   }, []);
 
-  // Following the OS is the default, so keep listening rather than sampling
-  // once — the theme should change under the user at sunset.
+  // Until someone picks a side, the OS decides — and keeps deciding, so the
+  // app follows it at sunset rather than sampling once at load.
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
     const query = window.matchMedia("(prefers-color-scheme: dark)");
@@ -34,20 +33,19 @@ export function useTheme() {
     return () => query.removeEventListener("change", onChange);
   }, []);
 
-  const resolved = resolveTheme(choice, system);
+  const theme = resolveTheme(stored, system);
 
   useEffect(() => {
-    applyTheme(resolved);
-  }, [resolved]);
+    applyTheme(theme);
+  }, [theme]);
 
-  const choose = useCallback((next: ThemeChoice) => {
-    setChoice(next);
+  const toggle = useCallback(() => {
+    const next = toggleTheme(theme);
+    setStored(next);
     storeTheme(next);
-  }, []);
+  }, [theme]);
 
-  const cycle = useCallback(() => choose(nextTheme(readStoredTheme())), [choose]);
-
-  return { choice, resolved, choose, cycle };
+  return { theme, toggle };
 }
 
 function SunIcon() {
@@ -77,40 +75,26 @@ function MoonIcon() {
   );
 }
 
-function SystemIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="2.5" y="4" width="19" height="13" rx="2" stroke="currentColor" strokeWidth="2" />
-      <path d="M9 20h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-const LABELS: Record<ThemeChoice, string> = {
-  light: "Light",
-  dark: "Dark",
-  system: "System",
-};
-
 /**
- * One button that cycles Light → Dark → System. The accessible name always
- * says what is active *and* what pressing does, because the icon alone can't
- * distinguish "dark because you chose it" from "dark because your OS is".
+ * One button, two states. It shows the theme it will switch *to* — a moon
+ * while you are in light — and says so, so the icon never has to carry the
+ * meaning on its own.
  */
 export function ThemeToggle({ className = "" }: { className?: string }) {
-  const { choice, resolved, cycle } = useTheme();
-  const Icon = choice === "system" ? SystemIcon : choice === "dark" ? MoonIcon : SunIcon;
+  const { theme, toggle } = useTheme();
+  const next = toggleTheme(theme);
+  const label = `Switch to ${next} theme`;
 
   return (
     <button
       type="button"
-      onClick={cycle}
-      data-theme-choice={choice}
-      aria-label={`Theme: ${LABELS[choice]}${choice === "system" ? ` (${LABELS[resolved]})` : ""}. Switch to ${LABELS[nextTheme(choice)]}.`}
-      title={`Theme: ${LABELS[choice]} — click for ${LABELS[nextTheme(choice)]}`}
+      onClick={toggle}
+      data-theme={theme}
+      aria-label={label}
+      title={label}
       className={className}
     >
-      <Icon />
+      {next === "dark" ? <MoonIcon /> : <SunIcon />}
     </button>
   );
 }

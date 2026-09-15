@@ -3,47 +3,48 @@ import {
   THEME_ATTRIBUTE,
   THEME_BOOT_SCRIPT,
   THEME_STORAGE_KEY,
-  nextTheme,
-  normalizeTheme,
+  parseTheme,
   resolveTheme,
+  toggleTheme,
 } from "@/backend/project/theme";
 
-describe("normalizeTheme", () => {
-  it("accepts the three real choices", () => {
-    expect(normalizeTheme("light")).toBe("light");
-    expect(normalizeTheme("dark")).toBe("dark");
-    expect(normalizeTheme("system")).toBe("system");
+describe("parseTheme", () => {
+  it("accepts the two real themes", () => {
+    expect(parseTheme("light")).toBe("light");
+    expect(parseTheme("dark")).toBe("dark");
   });
 
-  it("falls back to following the OS for anything else", () => {
-    // A stale or hand-edited localStorage value must not wedge the app.
-    for (const junk of [null, undefined, "", "Dark", 1, {}, "auto"]) {
-      expect(normalizeTheme(junk)).toBe("system");
-    }
+  it("returns null for anything else, which means 'nobody has chosen'", () => {
+    expect(parseTheme(null)).toBeNull();
+    expect(parseTheme("")).toBeNull();
+    expect(parseTheme("Dark")).toBeNull();
+    expect(parseTheme(42)).toBeNull();
+  });
+
+  it("reads the retired 'system' value as no preference", () => {
+    // Older builds stored a third choice. Those users should quietly carry on
+    // following their OS rather than getting pinned to a stale value.
+    expect(parseTheme("system")).toBeNull();
   });
 });
 
 describe("resolveTheme", () => {
-  it("defers to the OS only when the choice is system", () => {
-    expect(resolveTheme("system", "dark")).toBe("dark");
-    expect(resolveTheme("system", "light")).toBe("light");
+  it("uses the OS until someone picks a side", () => {
+    expect(resolveTheme(null, "dark")).toBe("dark");
+    expect(resolveTheme(null, "light")).toBe("light");
   });
 
-  it("lets an explicit choice override the OS", () => {
+  it("lets an explicit choice win over the OS", () => {
     expect(resolveTheme("light", "dark")).toBe("light");
     expect(resolveTheme("dark", "light")).toBe("dark");
   });
 });
 
-describe("nextTheme", () => {
-  it("cycles light -> dark -> system -> light", () => {
-    expect(nextTheme("light")).toBe("dark");
-    expect(nextTheme("dark")).toBe("system");
-    expect(nextTheme("system")).toBe("light");
-  });
-
-  it("recovers from a corrupt value instead of getting stuck", () => {
-    expect(nextTheme("nonsense" as never)).toBe("light");
+describe("toggleTheme", () => {
+  it("flips, and flipping twice is a round trip", () => {
+    expect(toggleTheme("light")).toBe("dark");
+    expect(toggleTheme("dark")).toBe("light");
+    expect(toggleTheme(toggleTheme("light"))).toBe("light");
   });
 });
 
@@ -61,7 +62,7 @@ describe("THEME_BOOT_SCRIPT", () => {
     expect(THEME_BOOT_SCRIPT).not.toContain("import ");
   });
 
-  it("actually applies the stored choice, falling back to the OS", () => {
+  it("applies the stored theme, falling back to the OS", () => {
     // Run it against fakes to prove the branch logic, not just its text.
     const run = (stored: string | null, prefersDark: boolean) => {
       let applied = "";
@@ -80,5 +81,8 @@ describe("THEME_BOOT_SCRIPT", () => {
     expect(run(null, true)).toBe("dark");
     expect(run(null, false)).toBe("light");
     expect(run("garbage", true)).toBe("dark");
+    // The retired value defers to the OS rather than pinning anyone.
+    expect(run("system", true)).toBe("dark");
+    expect(run("system", false)).toBe("light");
   });
 });
