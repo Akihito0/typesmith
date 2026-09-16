@@ -46,6 +46,8 @@ import {
   reorderPlaygroundNode,
   resizePlaygroundRect,
   rotateDelta,
+  rotationForDrag,
+  scaleRectsToBounds,
   setPlaygroundNodeFlags,
   snapRect,
   snapTargets,
@@ -117,6 +119,7 @@ const SHORTCUTS: { group: string; items: [string, string][] }[] = [
       ["⇧ drag", "Square / keep ratio"],
       ["⌥ drag", "From the centre"],
       ["⌥ drag node", "Duplicate"],
+      ["⇧ rotate grip", "Rotate in 15° steps"],
       ["⌘ / ctrl drag", "Ignore snapping"],
       ["Esc", "Cancel"],
     ],
@@ -170,6 +173,23 @@ type Gesture =
       rotation: number;
       minWidth: number;
       minHeight: number;
+    }
+  | {
+      // Resizing a multi-selection: one upright box around the group, and
+      // every node scales with it.
+      kind: "resize-group";
+      startX: number;
+      startY: number;
+      handle: PlaygroundHandle;
+      origin: PlaygroundRect;
+      origins: Draft;
+    }
+  | {
+      kind: "rotate";
+      id: string;
+      center: { x: number; y: number };
+      grab: { x: number; y: number };
+      startRotation: number;
     };
 
 /** Bounding box of a set of rects — the box a multi-node drag snaps with. */
@@ -269,6 +289,7 @@ export function PlaygroundPanel() {
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [rotationDraft, setRotationDraft] = useState<{ id: string; rotation: number } | null>(null);
   const [marquee, setMarquee] = useState<PlaygroundRect | null>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, zoom: 0.5 });
   const [spaceDown, setSpaceDown] = useState(false);
@@ -280,6 +301,7 @@ export function PlaygroundPanel() {
   const viewportRef = useRef<HTMLDivElement>(null);
   const gestureRef = useRef<Gesture | null>(null);
   const draftRef = useRef<Draft | null>(null);
+  const rotationDraftRef = useRef<{ id: string; rotation: number } | null>(null);
   const drawRectRef = useRef<PlaygroundRect | null>(null);
   const toolRef = useRef(tool);
   const snapEnabledRef = useRef(snapEnabled);
@@ -474,6 +496,11 @@ export function PlaygroundPanel() {
     setGestureKind(gesture.kind);
   }, []);
 
+  const applyRotationDraft = useCallback((next: { id: string; rotation: number } | null) => {
+    rotationDraftRef.current = next;
+    setRotationDraft(next);
+  }, []);
+
   const applyDraft = useCallback((next: Draft | null) => {
     draftRef.current = next;
     setDraft(next);
@@ -537,6 +564,39 @@ export function PlaygroundPanel() {
       const gesture = gestureRef.current;
       if (!gesture) return;
       const zoom = viewRef.current.zoom;
+
+      if (gesture.kind === "rotate") {
+        applyRotationDraft({
+          id: gesture.id,
+          rotation: rotationForDrag(
+            gesture.startRotation,
+            gesture.center,
+            gesture.grab,
+            toCanvas(event.clientX, event.clientY),
+            // Shift steps in 15°, the increments people actually reach for.
+            event.shiftKey ? 15 : 0
+          ),
+        });
+        return;
+      }
+
+      if (gesture.kind === "resize-group") {
+        const zoomNow = viewRef.current.zoom;
+        const box = resizePlaygroundRect(
+          gesture.origin,
+          gesture.handle,
+          (event.clientX - gesture.startX) / zoomNow,
+          (event.clientY - gesture.startY) / zoomNow,
+          {
+            minWidth: MIN_FRAME_SIZE,
+            minHeight: MIN_FRAME_SIZE,
+            aspect: event.shiftKey,
+            fromCenter: event.altKey,
+          }
+        );
+        applyDraft(scaleRectsToBounds(gesture.origins, gesture.origin, box, MIN_LAYER_WIDTH));
+        return;
+      }
 
       if (gesture.kind === "pan") {
         setView({
@@ -653,10 +713,22 @@ export function PlaygroundPanel() {
       gestureRef.current = null;
       setGestureKind(null);
       setMarquee(null);
+      const turned = rotationDraftRef.current;
       applyDraft(null);
       applyDrawRect(null);
+      applyRotationDraft(null);
       setGuides([]);
       if (!gesture) return;
+      if (gesture.kind === "rotate") {
+        if (turned && turned.rotation !== gesture.startRotation) {
+          commit(
+            updatePlaygroundNodes(playgroundRef.current, [turned.id], {
+              rotation: turned.rotation,
+            })
+          );
+        }
+        return;
+      }
       if (gesture.kind === "draw") {
         commitDraw(gesture.tool, drawn, gesture.anchor);
         // Figma-style: the tool returns to Move once the thing exists.
@@ -664,10 +736,11 @@ export function PlaygroundPanel() {
         return;
       }
       if (!pending) return;
-      if (gesture.kind !== "move" && gesture.kind !== "resize") return;
+      if (gesture.kind !== "move" && gesture.kind !== "resize" && gesture.kind !== "resize-group")
+        return;
       const changed = Object.entries(pending).some(([id, rect]) => {
-        const origin =
-          gesture.kind === "move" ? gesture.origins[id] : (gesture.origin as PlaygroundRect);
+        const origin = gesture.kind === "resize" ? gesture.origin : gesture.origins[id];
+        if (!origin) return true;
         return (
           origin.x !== rect.x ||
           origin.y !== rect.y ||
@@ -686,7 +759,7 @@ export function PlaygroundPanel() {
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
     };
-  }, [applyDraft, applyDrawRect, commit, commitDraw, gestureKind, toCanvas]);
+  }, [applyDraft, applyDrawRect, applyRotationDraft, commit, commitDraw, gestureKind, toCanvas]);
 
   /** Arm-and-drag: with any tool but Move, a press anywhere starts drawing —
    * including on top of an existing frame, so shapes can be nested freely. */
@@ -792,6 +865,44 @@ export function PlaygroundPanel() {
       rotation,
       minWidth,
       minHeight,
+    });
+  };
+
+  const onRotatePointerDown = (
+    event: React.PointerEvent<HTMLElement>,
+    id: string,
+    rect: PlaygroundRect,
+    rotation: number
+  ) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    beginGesture({
+      kind: "rotate",
+      id,
+      center: { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 },
+      grab: toCanvas(event.clientX, event.clientY),
+      startRotation: rotation,
+    });
+  };
+
+  const onGroupHandlePointerDown = (
+    event: React.PointerEvent<HTMLElement>,
+    handle: PlaygroundHandle
+  ) => {
+    if (event.button !== 0) return;
+    const origins = gatherOrigins(selectionRef.current);
+    const rects = Object.values(origins);
+    if (rects.length === 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    beginGesture({
+      kind: "resize-group",
+      startX: event.clientX,
+      startY: event.clientY,
+      handle,
+      origin: unionOf(rects),
+      origins,
     });
   };
 
@@ -1081,6 +1192,19 @@ export function PlaygroundPanel() {
     }
   };
 
+  const layerTurn = (layer: PlaygroundTextLayer) =>
+    rotationDraft?.id === layer.id ? rotationDraft.rotation : layer.rotation;
+
+  // The group box for a multi-selection, following any in-flight draft so the
+  // handles track the scale live.
+  const groupRects =
+    selection.length > 1 && tool === "move"
+      ? Object.entries(gatherOriginsIn(playground, selection)).map(
+          ([id, rect]) => draft?.[id] ?? rect
+        )
+      : [];
+  const groupBox = groupRects.length > 1 ? unionOf(groupRects) : null;
+
   const rectFor = (node: PlaygroundRect & { id: string }): PlaygroundRect =>
     draft?.[node.id] ?? rectOf(node);
 
@@ -1211,7 +1335,8 @@ export function PlaygroundPanel() {
               const rect = rectFor(frame);
               const active = selection.includes(frame.id);
               if (frame.hidden) return null;
-              const spin = frame.rotation ? `rotate(${frame.rotation}deg)` : undefined;
+              const turn = rotationDraft?.id === frame.id ? rotationDraft.rotation : frame.rotation;
+              const spin = turn ? `rotate(${turn}deg)` : undefined;
               return (
                 <div key={frame.id}>
                   <button
@@ -1259,8 +1384,9 @@ export function PlaygroundPanel() {
                   {active && selection.length === 1 && tool === "move" && !frame.locked && (
                     <ResizeHandles
                       rect={rect}
-                      rotation={frame.rotation}
+                      rotation={turn}
                       zoom={view.zoom}
+                      onRotateStart={(event) => onRotatePointerDown(event, frame.id, rect, turn)}
                       onStart={(event, handle) =>
                         onHandlePointerDown(
                           event,
@@ -1301,7 +1427,7 @@ export function PlaygroundPanel() {
                       letterSpacing: `${layer.letterSpacing}em`,
                       textAlign: layer.textAlign,
                       opacity: layer.opacity,
-                      transform: layer.rotation ? `rotate(${layer.rotation}deg)` : undefined,
+                      transform: layerTurn(layer) ? `rotate(${layerTurn(layer)}deg)` : undefined,
                       pointerEvents: layer.locked ? "none" : undefined,
                       overflow: "hidden",
                       touchAction: "none",
@@ -1350,8 +1476,11 @@ export function PlaygroundPanel() {
                     !layer.locked && (
                       <ResizeHandles
                         rect={rect}
-                        rotation={layer.rotation}
+                        rotation={layerTurn(layer)}
                         zoom={view.zoom}
+                        onRotateStart={(event) =>
+                          onRotatePointerDown(event, layer.id, rect, layerTurn(layer))
+                        }
                         onStart={(event, handle) =>
                           onHandlePointerDown(
                             event,
@@ -1391,6 +1520,52 @@ export function PlaygroundPanel() {
                 }
               />
             ))}
+
+            {groupBox && (
+              <>
+                <div
+                  data-testid="selection-box"
+                  className="pointer-events-none absolute"
+                  style={{
+                    left: groupBox.x,
+                    top: groupBox.y,
+                    width: groupBox.width,
+                    height: groupBox.height,
+                    boxShadow: `0 0 0 ${1.5 / view.zoom}px #2563eb`,
+                  }}
+                />
+                <ResizeHandles
+                  rect={groupBox}
+                  rotation={0}
+                  zoom={view.zoom}
+                  onStart={onGroupHandlePointerDown}
+                />
+              </>
+            )}
+
+            {rotationDraft &&
+              (() => {
+                const node = [...playground.frames, ...playground.layers].find(
+                  (item) => item.id === rotationDraft.id
+                );
+                if (!node) return null;
+                return (
+                  <div
+                    data-testid="rotation-readout"
+                    className="pointer-events-none absolute whitespace-nowrap rounded bg-brand-600 font-medium text-white"
+                    style={{
+                      left: node.x + node.width / 2,
+                      top: node.y + node.height + 16 / view.zoom,
+                      transform: `translateX(-50%) scale(${1 / view.zoom})`,
+                      transformOrigin: "top center",
+                      padding: "2px 6px",
+                      fontSize: 11,
+                    }}
+                  >
+                    {Math.round(rotationDraft.rotation)}°
+                  </div>
+                );
+              })()}
 
             {drawRect && (
               <div
@@ -1580,11 +1755,14 @@ function ResizeHandles({
   rotation,
   zoom,
   onStart,
+  onRotateStart,
 }: {
   rect: PlaygroundRect;
   rotation: number;
   zoom: number;
   onStart: (event: React.PointerEvent<HTMLElement>, handle: PlaygroundHandle) => void;
+  /** When given, a grip above the top edge turns the node. */
+  onRotateStart?: (event: React.PointerEvent<HTMLElement>) => void;
 }) {
   const size = 10 / zoom;
   return (
@@ -1628,6 +1806,37 @@ function ResizeHandles({
           />
         );
       })}
+      {onRotateStart && (
+        <>
+          {/* Stem and grip sit inside the rotated wrapper, so the grip always
+              points "up" from the node's own top edge. */}
+          <span
+            className="pointer-events-none absolute bg-brand-600"
+            style={{
+              left: rect.width / 2 - 0.75 / zoom,
+              top: -22 / zoom,
+              width: 1.5 / zoom,
+              height: 22 / zoom,
+            }}
+          />
+          <span
+            role="button"
+            aria-label="Rotate"
+            title="Drag to rotate · ⇧ for 15° steps"
+            className="pointer-events-auto absolute z-10 rounded-full bg-white"
+            style={{
+              left: rect.width / 2 - 6 / zoom,
+              top: -28 / zoom,
+              width: 12 / zoom,
+              height: 12 / zoom,
+              border: `${1.5 / zoom}px solid #2563eb`,
+              cursor: "grab",
+              touchAction: "none",
+            }}
+            onPointerDown={onRotateStart}
+          />
+        </>
+      )}
     </div>
   );
 }

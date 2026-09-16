@@ -455,4 +455,73 @@ test.describe("playground objects", () => {
     const threeX = await xField.inputValue();
     expect(fourX).toBe(threeX);
   });
+
+  test("dragging the rotate grip turns a node, in 15° steps with Shift", async ({ page }) => {
+    const { box } = await openPlayground(page);
+    await drawFrame(page, box, [520, 160], [720, 300]);
+
+    const grip = page.getByRole("button", { name: "Rotate" });
+    await expect(grip).toBeVisible();
+    const g = await grip.boundingBox();
+    if (!g) throw new Error("The rotate grip has no layout box.");
+    const centre = { x: box.x + 620, y: box.y + 230 };
+
+    // Sweep the grip a good way clockwise around the frame's centre.
+    await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
+    await page.mouse.down();
+    await page.keyboard.down("Shift");
+    await page.mouse.move(centre.x + 60, centre.y - 60, { steps: 6 });
+    await page.mouse.move(centre.x + 90, centre.y, { steps: 6 });
+    await expect(page.getByTestId("rotation-readout")).toBeVisible();
+    await page.mouse.up();
+    await page.keyboard.up("Shift");
+
+    const rotation = Number(
+      await page.getByRole("spinbutton", { name: "Rotation (°)" }).inputValue()
+    );
+    expect(rotation).not.toBe(0);
+    expect(Math.abs(rotation) % 15).toBe(0);
+    // The readout is a drag affordance only.
+    await expect(page.getByTestId("rotation-readout")).toHaveCount(0);
+  });
+
+  test("resizing a multi-selection scales every node with it", async ({ page }) => {
+    const { box } = await openPlayground(page);
+    // Kept well left: at the default viewport the inspector covers the
+    // canvas's right edge, and a handle under it can't be grabbed.
+    await drawFrame(page, box, [300, 120], [400, 200]);
+    await drawFrame(page, box, [440, 120], [540, 200]);
+
+    const rowThree = page.getByRole("button", { name: /^▢ Frame 3/ });
+    const rowFour = page.getByRole("button", { name: /^▢ Frame 4/ });
+    const sizeOf = async (row: typeof rowThree) => {
+      const match = (await row.innerText()).match(/(\d+) × (\d+)/);
+      if (!match) throw new Error("No size in the layer row.");
+      return { width: Number(match[1]), height: Number(match[2]) };
+    };
+    const threeBefore = await sizeOf(rowThree);
+    const fourBefore = await sizeOf(rowFour);
+
+    await rowThree.click();
+    await rowFour.click({ modifiers: ["Shift"] });
+    await expect(page.getByTestId("selection-box")).toBeVisible();
+
+    // With two selected there is exactly one set of handles: the group's.
+    const corner = page.getByRole("button", { name: "Resize bottom right" });
+    await expect(corner).toHaveCount(1);
+    const c = await corner.boundingBox();
+    if (!c) throw new Error("The group handle has no layout box.");
+    await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(c.x + 120, c.y + 80, { steps: 10 });
+    await page.mouse.up();
+
+    const threeAfter = await sizeOf(rowThree);
+    const fourAfter = await sizeOf(rowFour);
+    expect(threeAfter.width).toBeGreaterThan(threeBefore.width);
+    expect(fourAfter.width).toBeGreaterThan(fourBefore.width);
+    expect(threeAfter.height).toBeGreaterThan(threeBefore.height);
+    // Both grew by the same factor, so the group kept its proportions.
+    expect(threeAfter.width / threeBefore.width).toBeCloseTo(fourAfter.width / fourBefore.width, 1);
+  });
 });

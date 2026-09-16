@@ -21,12 +21,15 @@ import {
   playgroundBounds,
   playgroundNodesBounds,
   pastePlaygroundNodes,
+  pointerAngle,
   removePlaygroundNodes,
   reorderPlaygroundLayer,
   reorderPlaygroundNode,
   resizePlaygroundRect,
   rotateDelta,
   rotatedBounds,
+  rotationForDrag,
+  scaleRectsToBounds,
   setPlaygroundNodeFlags,
   snapRect,
   snapTargets,
@@ -540,5 +543,80 @@ describe("copy and paste", () => {
     const once = pastePlaygroundNodes(source, clip);
     const twice = pastePlaygroundNodes(once.document, clip);
     expect(twice.document.layers).toHaveLength(4);
+  });
+});
+
+describe("rotate grip geometry", () => {
+  const center = { x: 100, y: 100 };
+
+  it("measures angles clockwise, matching CSS rotate()", () => {
+    expect(pointerAngle(center, { x: 200, y: 100 })).toBeCloseTo(0, 6);
+    expect(pointerAngle(center, { x: 100, y: 200 })).toBeCloseTo(90, 6);
+  });
+
+  it("turns by the swept angle, so grabbing never makes the node jump", () => {
+    const grab = { x: 100, y: 0 }; // straight up
+    expect(rotationForDrag(20, center, grab, grab)).toBeCloseTo(20, 6);
+    // A quarter turn clockwise from straight up is straight right.
+    expect(rotationForDrag(20, center, grab, { x: 200, y: 100 })).toBeCloseTo(110, 6);
+  });
+
+  it("snaps to steps when asked", () => {
+    const grab = { x: 100, y: 0 };
+    const pointer = { x: 100 + Math.cos(-1.2) * 100, y: 100 + Math.sin(-1.2) * 100 };
+    const snapped = rotationForDrag(0, center, grab, pointer, 15);
+    expect(snapped % 15).toBe(0);
+  });
+
+  it("wraps into -180..180 instead of accumulating", () => {
+    const grab = { x: 200, y: 100 };
+    const result = rotationForDrag(170, center, grab, { x: 100, y: 200 });
+    expect(result).toBeCloseTo(-100, 6);
+  });
+});
+
+describe("scaleRectsToBounds", () => {
+  const from = { x: 0, y: 0, width: 200, height: 100 };
+
+  it("keeps each rect proportional inside the new box", () => {
+    const rects = {
+      a: { x: 0, y: 0, width: 100, height: 50 },
+      b: { x: 100, y: 50, width: 100, height: 50 },
+    };
+    const scaled = scaleRectsToBounds(rects, from, { x: 0, y: 0, width: 400, height: 200 });
+    expect(scaled.a).toEqual({ x: 0, y: 0, width: 200, height: 100 });
+    expect(scaled.b).toEqual({ x: 200, y: 100, width: 200, height: 100 });
+  });
+
+  it("moves the group with the box's origin", () => {
+    const scaled = scaleRectsToBounds({ a: { x: 50, y: 25, width: 50, height: 25 } }, from, {
+      x: 1000,
+      y: 500,
+      width: 200,
+      height: 100,
+    });
+    expect(scaled.a).toEqual({ x: 1050, y: 525, width: 50, height: 25 });
+  });
+
+  it("scales each axis on its own", () => {
+    const scaled = scaleRectsToBounds({ a: { x: 0, y: 0, width: 200, height: 100 } }, from, {
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 300,
+    });
+    expect(scaled.a.width).toBe(200);
+    expect(scaled.a.height).toBe(300);
+  });
+
+  it("never shrinks a rect below the minimum", () => {
+    const scaled = scaleRectsToBounds(
+      { a: { x: 0, y: 0, width: 10, height: 10 } },
+      from,
+      { x: 0, y: 0, width: 2, height: 1 },
+      8
+    );
+    expect(scaled.a.width).toBe(8);
+    expect(scaled.a.height).toBe(8);
   });
 });

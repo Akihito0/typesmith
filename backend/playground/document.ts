@@ -524,6 +524,58 @@ export function rotateDelta(dx: number, dy: number, rotation: number): { dx: num
   return { dx: dx * cos - dy * sin, dy: dx * sin + dy * cos };
 }
 
+/** Angle of a pointer around a centre, in degrees clockwise from east —
+ * clockwise because the canvas y axis points down, matching CSS rotate(). */
+export function pointerAngle(
+  center: { x: number; y: number },
+  pointer: { x: number; y: number }
+): number {
+  return (Math.atan2(pointer.y - center.y, pointer.x - center.x) * 180) / Math.PI;
+}
+
+/** Rotation after dragging a rotate grip. The node turns by however far the
+ * pointer has swept around its centre since the grab, so grabbing never makes
+ * it jump. `step` (Shift) rounds the result to fixed increments. */
+export function rotationForDrag(
+  startRotation: number,
+  center: { x: number; y: number },
+  grab: { x: number; y: number },
+  pointer: { x: number; y: number },
+  step = 0
+): number {
+  const swept = pointerAngle(center, pointer) - pointerAngle(center, grab);
+  let rotation = startRotation + swept;
+  if (step > 0) rotation = Math.round(rotation / step) * step;
+  const wrapped = ((rotation % 360) + 360) % 360;
+  const result = wrapped > 180 ? wrapped - 360 : wrapped;
+  // Avoid handing the inspector a "-0".
+  return Object.is(result, -0) ? 0 : result;
+}
+
+/** Map every rect in a group from one bounding box onto another, keeping each
+ * rect's position and size proportional within the box. This is what resizing
+ * a multi-selection does: the group scales as one, and the layout inside it
+ * survives. Sizes never go below `min`. */
+export function scaleRectsToBounds(
+  rects: Record<string, PlaygroundRect>,
+  from: PlaygroundRect,
+  to: PlaygroundRect,
+  min = 1
+): Record<string, PlaygroundRect> {
+  const sx = from.width > 0 ? to.width / from.width : 1;
+  const sy = from.height > 0 ? to.height / from.height : 1;
+  const scaled: Record<string, PlaygroundRect> = {};
+  Object.entries(rects).forEach(([id, rect]) => {
+    scaled[id] = {
+      x: Math.round(to.x + (rect.x - from.x) * sx),
+      y: Math.round(to.y + (rect.y - from.y) * sy),
+      width: Math.max(min, Math.round(rect.width * sx)),
+      height: Math.max(min, Math.round(rect.height * sy)),
+    };
+  });
+  return scaled;
+}
+
 const EDGES = ["start", "center", "end"] as const;
 
 function axisPoints(rect: PlaygroundRect, axis: "x" | "y"): Record<string, number> {
